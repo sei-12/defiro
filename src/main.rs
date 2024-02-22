@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, io::{BufReader, Read}, str::Chars};
 
 struct Color {
     r: u32,
@@ -50,14 +50,44 @@ impl Color {
     } 
 }
 
+fn pop_next_semicolon(file_chars: &mut dyn Iterator<Item = char>) -> String {
+    let mut line = "".to_string();
+    loop {
+        let Some(c) = file_chars.next() else {
+            break;
+        }; 
+        
+        line.push(c);
+
+        if c == ';' {
+            break;
+        }
+    } 
+    line
+}
+
+
 fn main() {
-    println!("Hello, world!");
+    let mut reader = BufReader::new(std::io::stdin());
+    let mut stdin_string = String::new();
+    reader.read_to_string(&mut stdin_string).unwrap();
+    let mut file_chars = stdin_string.chars().peekable();
+
+    loop {
+        if file_chars.peek().is_none() {
+            break;
+        }
+        
+        let line = pop_next_semicolon(&mut file_chars);
+        println!("line: {}",line)        
+    }   
 }
 
 
 #[cfg(test)]
 mod test {
-    use crate::{pairwise_concat, Color};
+
+    use crate::{pairwise_concat, pop_next_semicolon, Color};
     #[test]
     fn _pairwise_concat(){
         let test = "hello".to_string(); 
@@ -82,6 +112,28 @@ mod test {
         let result = pairwise_concat(test.chars().collect());
         assert_eq!(vec!["ab","cd","ef"],result);
     }
+    
+    #[test]
+    fn _pop_next_semicolon(){
+        let test = "hello;hello;".to_string(); 
+        let mut chars = test.chars();
+        assert_eq!(pop_next_semicolon(&mut chars),"hello;");
+        assert_eq!(pop_next_semicolon(&mut chars),"hello;");
+
+        let test = "aaa;bbb;cc".to_string(); 
+        let mut chars = test.chars();
+        assert_eq!(pop_next_semicolon(&mut chars),"aaa;");
+        assert_eq!(pop_next_semicolon(&mut chars),"bbb;");
+        assert_eq!(pop_next_semicolon(&mut chars),"cc");
+
+        let test = ";aaa;bbb;cc".to_string(); 
+        let mut chars = test.chars();
+        assert_eq!(pop_next_semicolon(&mut chars),";");
+        assert_eq!(pop_next_semicolon(&mut chars),"aaa;");
+        assert_eq!(pop_next_semicolon(&mut chars),"bbb;");
+        assert_eq!(pop_next_semicolon(&mut chars),"cc");
+    }
+
     #[test]
     fn from_hex_string(){
         let test1 = "#ffffff".to_string();
