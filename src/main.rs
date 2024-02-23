@@ -2,6 +2,71 @@ use std::{
     collections::VecDeque, io::{BufReader, Read}
 };
 
+enum Expression {
+    Raw(Color)    
+}
+
+struct LetStatement {
+    left: String,
+    right: Expression    
+}
+
+enum Statement {
+    Let(LetStatement)
+}
+
+#[derive(Debug)]
+enum StatementParseFault {
+    TODO,    
+}
+
+fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<Expression,StatementParseFault>{ 
+    let Some(front_token) = tokens.pop_front() else {
+        return Err(StatementParseFault::TODO);        
+    }; 
+    
+    match front_token {
+        Token::HexColor(color) => Ok(Expression::Raw(color)),
+        _ => Err(StatementParseFault::TODO)
+    }
+}
+
+fn parse_let_statement(mut tokens: VecDeque<Token>) -> Result<LetStatement,StatementParseFault> {
+    let Some(iden_token) = tokens.pop_front() else {
+        return Err(StatementParseFault::TODO);        
+    }; 
+
+    let identifier = match iden_token {
+        Token::Identifier(id) => id,
+        _ => { return Err(StatementParseFault::TODO);}
+    };
+
+    let Some(assgin_token) = tokens.pop_front() else {
+        return Err(StatementParseFault::TODO);        
+    }; 
+
+    if assgin_token != Token::Assign {
+        return Err(StatementParseFault::TODO);        
+    };
+    
+    let exp = parse_expression(&mut tokens)?;
+    
+    
+    Ok(LetStatement { left: identifier, right: exp })
+}
+
+fn parse_tokens_to_statement(mut line_tokens: VecDeque<Token>) -> Result<Statement,StatementParseFault> {
+    let Some(front_token) = line_tokens.pop_front() else {
+        return Err(StatementParseFault::TODO);
+    }; 
+    
+    if front_token == Token::Let {
+        return Ok(Statement::Let(parse_let_statement(line_tokens)?));
+    };
+    
+    Err(StatementParseFault::TODO)
+}
+
 fn peek_take_while<T>(iter: &mut VecDeque<T>,check: fn(&T) -> bool )-> VecDeque<T> {
     let mut ret_vec = VecDeque::new();
     loop {
@@ -178,7 +243,8 @@ fn main() {
 
         let line_string: String = line.into_iter().collect();
         let mut tmp = line_string.chars().collect();
-        let _tokens = parse_line(&mut tmp);
+        let tokens = parse_line(&mut tmp).unwrap();
+        let _line_stmt = parse_tokens_to_statement(tokens).unwrap();
 
     }
 }
@@ -189,7 +255,7 @@ mod test {
     
     use std::collections::VecDeque;
 
-    use crate::{parse_line, peek_take_while, Color, Token};
+    use crate::{parse_line, parse_tokens_to_statement, peek_take_while, Color, Statement, Token};
 
     #[test]
     fn _peek_take_while(){
@@ -207,6 +273,24 @@ mod test {
         let result = peek_take_while(&mut deque, |&x| x == 10);
         assert_eq!(result, VecDeque::from(vec![1, 2, 3, 4, 5]));
         assert_eq!(deque, VecDeque::new());
+    }
+    
+    #[test]
+    fn _parse_token_to_stmt(){
+        let mut test = "let a = #0a0a0a".chars().collect();
+        let tokens = parse_line(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens).unwrap();
+        match stmt {
+            Statement::Let(le) => {
+                assert_eq!(le.left,"a".to_string());
+                match le.right {
+                    crate::Expression::Raw(color) => {
+                        assert_eq!(color,Color { r: 10, g: 10, b: 10 })
+                    }
+                }
+            }
+        }
+
     }
 
     #[test]
