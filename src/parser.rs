@@ -8,8 +8,8 @@ pub enum Expression {
 }
 
 pub struct LetStatement {
-    left: String,
-    right: Expression    
+    pub left: String,
+    pub right: Expression    
 }
 
 pub enum Statement {

@@ -1,0 +1,5 @@
+let color1 = #ffffff;
+let color2 = #fafafa;
+let color3 = #00aaaa;
+let color4 = #aaabbb;
+let color1 = #ccccca;
