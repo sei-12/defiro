@@ -31,6 +31,9 @@ fn main() {
         let line_string: String = line.into_iter().collect();
         let mut chars = line_string.chars().collect();
         let tokens = lexer(&mut chars).unwrap();
+        if tokens.len() == 0 {
+            continue;
+        }
         let line_stmt = parse_tokens_to_statement(tokens).unwrap();
         let result = eval(line_stmt, &mut env);
 
