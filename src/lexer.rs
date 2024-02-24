@@ -20,6 +20,12 @@ fn is_token_char(ch: char) -> bool {
     if ch == '=' {
         return true;
     };
+    if ch == '(' {
+        return true;
+    }
+    if ch == ')' {
+        return true;
+    }
     false
 }
 
@@ -63,6 +69,19 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
             continue;
         }
 
+        if ch == '=' {
+            tokens.push_back(Token::Assign);
+            continue;
+        }
+        if ch == '(' {
+            tokens.push_back(Token::LeftPare);
+            continue;
+        }
+        if ch == ')' {
+            tokens.push_back(Token::RightPare);
+            continue;
+        }
+
         if ch == '#' {
             let hex = pops_front(&mut chars, 6);
             if hex.len() != 6 {
@@ -73,11 +92,6 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
                 return Err(LexFault::Value);
             };
             tokens.push_back(Token::HexColor(color));
-            continue;
-        }
-
-        if ch == '=' {
-            tokens.push_back(Token::Assign);
             continue;
         }
         
@@ -109,8 +123,8 @@ pub enum Token {
     Identifier(String), // 標準搭載された関数も含める
     // Int(String),
     Assign,
-    // LeftPare,
-    // RightPare,
+    LeftPare,
+    RightPare,
     // Comma,
 }
 
@@ -122,6 +136,17 @@ mod test {
 
     #[test]
     fn _parse_line() {
+        let mut test = "()=".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::LeftPare,
+                Token::RightPare,
+                Token::Assign,
+            ]
+        );
+
         let mut test = "let hello = #ffffff".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
         assert_eq!(
@@ -210,5 +235,66 @@ mod test {
         let mut test = "aaaa#aa".chars().collect();
         let parsed = lexer(&mut test);
         assert!(parsed.is_err());
+        
+
+        let mut test = "((((()))))aaa((((()))))".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare,
+                Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, 
+                Token::Identifier("aaa".to_string()),
+                Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare,
+                Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, 
+            ]
+        );
+        let mut test = "let aaa = hello(aaa)".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Let,
+                Token::Identifier("aaa".to_string()),
+                Token::Assign,
+                Token::Identifier("hello".to_string()),
+                Token::LeftPare,
+                Token::Identifier("aaa".to_string()),
+                Token::RightPare, 
+            ]
+        );
+
+        let mut test = "let( )  aaa()   ( aaa )".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Let,
+                Token::LeftPare,
+                Token::RightPare, 
+                Token::Identifier("aaa".to_string()),
+                Token::LeftPare,
+                Token::RightPare, 
+                Token::LeftPare,
+                Token::Identifier("aaa".to_string()),
+                Token::RightPare, 
+            ]
+        );
+        let mut test = "let()aaa()(aaa)".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Let,
+                Token::LeftPare,
+                Token::RightPare, 
+                Token::Identifier("aaa".to_string()),
+                Token::LeftPare,
+                Token::RightPare, 
+                Token::LeftPare,
+                Token::Identifier("aaa".to_string()),
+                Token::RightPare, 
+            ]
+        );
     }
 }
