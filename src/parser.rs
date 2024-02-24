@@ -10,11 +10,19 @@ pub struct RgbFunctoin {
     pub arg3_b: TokenInt,
 }
 
-pub enum Function {
-    Rgb(RgbFunctoin),
+pub struct PlusFunction {
+    pub arg_expression: Box<ColorExpression>,
+    pub arg_r: TokenInt,
+    pub arg_g: TokenInt,
+    pub arg_b: TokenInt,
 }
 
-pub enum Expression {
+pub enum Function {
+    Rgb(RgbFunctoin),
+    Plus(PlusFunction),
+}
+
+pub enum ColorExpression {
     Identifier(String),
     Raw(Color),
     Function(Function),
@@ -22,7 +30,7 @@ pub enum Expression {
 
 pub struct LetStatement {
     pub left: String,
-    pub right: Expression,
+    pub right: ColorExpression,
 }
 
 pub enum Statement {
@@ -33,21 +41,28 @@ pub enum Statement {
 pub enum ParseFault {
     TODO,
     Syntax,
+    IsFunction { target_name: String},
 }
 impl ParseFault {
-    pub fn msg(&self) -> String{
+    pub fn msg(&self) -> String {
         match self {
             ParseFault::Syntax => {
                 format!("ParseError: Syntax")
-            },
+            }
             ParseFault::TODO => {
                 format!("ParseError: TODO")
+            },
+            ParseFault::IsFunction { target_name } => {
+                format!("ParseError: {} is Function",target_name)
             }
         }
-    } 
+    }
 }
 fn is_function_name(name: &String) -> bool {
     if name == "rgb" {
+        return true;
+    };
+    if name == "plus" {
         return true;
     };
 
@@ -64,7 +79,7 @@ fn check_next_token(tokens: &mut VecDeque<Token>, assert: Token) -> Result<(), P
     Ok(())
 }
 
-fn parse_rgb_function(tokens: &mut VecDeque<Token>) -> Result<Expression, ParseFault> {
+fn parse_rgb_function(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault> {
     check_next_token(tokens, Token::LeftPare)?;
     let Some(Token::Int(r)) = tokens.pop_front() else {
         return Err(ParseFault::Syntax);
@@ -79,55 +94,90 @@ fn parse_rgb_function(tokens: &mut VecDeque<Token>) -> Result<Expression, ParseF
     };
     check_next_token(tokens, Token::RightPare)?;
 
-    Ok(Expression::Function(Function::Rgb(RgbFunctoin {
+    Ok(ColorExpression::Function(Function::Rgb(RgbFunctoin {
         arg1_r: r,
         arg2_g: g,
         arg3_b: b,
     })))
 }
 
-fn parse_function(name: String, tokens: &mut VecDeque<Token>) -> Result<Expression, ParseFault> {
+fn parse_plus_fucntion(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault>{
+    check_next_token(tokens, Token::LeftPare)?;
+    let exp = parse_expression(tokens)?;
+
+    check_next_token(tokens, Token::Comma)?;
+    let Some(Token::Int(r)) = tokens.pop_front() else {
+        return Err(ParseFault::Syntax);
+    };
+    check_next_token(tokens, Token::Comma)?;
+    let Some(Token::Int(g)) = tokens.pop_front() else {
+        return Err(ParseFault::Syntax);
+    };
+    check_next_token(tokens, Token::Comma)?;
+    let Some(Token::Int(b)) = tokens.pop_front() else {
+        return Err(ParseFault::Syntax);
+    };
+    check_next_token(tokens, Token::RightPare)?;
+    
+    Ok(ColorExpression::Function(Function::Plus(PlusFunction { 
+        arg_expression: Box::new(exp) ,
+        arg_r: r, 
+        arg_g: g, 
+        arg_b: b 
+    })))
+}
+
+fn parse_function(
+    name: String,
+    tokens: &mut VecDeque<Token>,
+) -> Result<ColorExpression, ParseFault> {
     if name == "rgb" {
         return parse_rgb_function(tokens);
     };
+    if name == "plus" {
+        return parse_plus_fucntion(tokens);
+    };
+
 
     panic!("bug")
 }
 
-fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<Expression, ParseFault> {
+fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault> {
     let Some(front_token) = tokens.pop_front() else {
         return Err(ParseFault::TODO);
     };
 
     let exp = match front_token {
-        Token::HexColor(color) => Ok(Expression::Raw(color)),
+        Token::HexColor(color) => Ok(ColorExpression::Raw(color)),
         Token::Identifier(name) => {
             if is_function_name(&name) {
                 parse_function(name, tokens)
             } else {
-                Ok(Expression::Identifier(name))
+                Ok(ColorExpression::Identifier(name))
             }
         }
         _ => Err(ParseFault::TODO),
     }?;
 
-    if tokens.len() != 0 {
-        return Err(ParseFault::Syntax);
-    };
-    
+
     Ok(exp)
 }
 
-fn parse_let_statement(mut tokens: VecDeque<Token>) -> Result<LetStatement, ParseFault> {
+fn parse_let_statement(tokens: &mut VecDeque<Token>) -> Result<LetStatement, ParseFault> {
     let Some(iden_token) = tokens.pop_front() else {
         return Err(ParseFault::TODO);
     };
+
 
     let identifier = match iden_token {
         Token::Identifier(id) => id,
         _ => {
             return Err(ParseFault::TODO);
         }
+    };
+    
+    if is_function_name(&identifier){
+        return  Err(ParseFault::IsFunction { target_name: identifier });
     };
 
     let Some(assgin_token) = tokens.pop_front() else {
@@ -138,7 +188,7 @@ fn parse_let_statement(mut tokens: VecDeque<Token>) -> Result<LetStatement, Pars
         return Err(ParseFault::TODO);
     };
 
-    let exp = parse_expression(&mut tokens)?;
+    let exp = parse_expression(tokens)?;
 
     Ok(LetStatement {
         left: identifier,
@@ -153,17 +203,26 @@ pub fn parse_tokens_to_statement(
         return Err(ParseFault::TODO);
     };
 
-    if front_token == Token::Let {
-        return Ok(Statement::Let(parse_let_statement(line_tokens)?));
+    let stmt = match front_token {
+        Token::Let => Statement::Let(parse_let_statement(&mut line_tokens)?),
+        _ => { return Err(ParseFault::Syntax);}
     };
 
-    Err(ParseFault::TODO)
+    if line_tokens.len() != 0 {
+        return Err(ParseFault::Syntax);
+    };
+
+    Ok(stmt)
 }
 
 #[cfg(test)]
 mod test {
     use super::{parse_tokens_to_statement, Statement};
-    use crate::{color::Color, lexer::lexer, parser::{Expression, Function}};
+    use crate::{
+        color::Color,
+        lexer::lexer,
+        parser::{ColorExpression, Function},
+    };
 
     #[test]
     fn _parse_token_to_stmt() {
@@ -174,7 +233,7 @@ mod test {
             Statement::Let(le) => {
                 assert_eq!(le.left, "a".to_string());
                 match le.right {
-                    Expression::Raw(color) => {
+                    ColorExpression::Raw(color) => {
                         assert_eq!(
                             color,
                             Color {
@@ -196,14 +255,14 @@ mod test {
             Statement::Let(le) => {
                 assert_eq!(le.left, "a".to_string());
                 match le.right {
-                    Expression::Identifier(name) => {
+                    ColorExpression::Identifier(name) => {
                         assert_eq!(name, "bbb".to_string())
                     }
                     _ => panic!(),
                 }
             }
         }
-        
+
         let mut test = "let a = rgb(1,2,3)".chars().collect();
         let tokens = lexer(&mut test).unwrap();
         let stmt = parse_tokens_to_statement(tokens).unwrap();
@@ -211,14 +270,14 @@ mod test {
             Statement::Let(le) => {
                 assert_eq!(le.left, "a".to_string());
                 match le.right {
-                    Expression::Function(f) => {
+                    ColorExpression::Function(f) => {
                         match f {
                             Function::Rgb(rgbf) => {
-                                assert_eq!(rgbf.arg1_r,1);
-                                assert_eq!(rgbf.arg2_g,2);
-                                assert_eq!(rgbf.arg3_b,3);
-                            },
-                            // _ => panic!()
+                                assert_eq!(rgbf.arg1_r, 1);
+                                assert_eq!(rgbf.arg2_g, 2);
+                                assert_eq!(rgbf.arg3_b, 3);
+                            }
+                            _ => panic!()
                         }
                     }
                     _ => panic!(),
@@ -239,11 +298,11 @@ mod test {
         let mut test = "let a rgb(1,2,3)()".chars().collect();
         let tokens = lexer(&mut test).unwrap();
         let stmt = parse_tokens_to_statement(tokens);
-        assert!(stmt.is_err()); 
+        assert!(stmt.is_err());
 
         let mut test = "let a = a g".chars().collect();
         let tokens = lexer(&mut test).unwrap();
         let stmt = parse_tokens_to_statement(tokens);
-        assert!(stmt.is_err()); 
+        assert!(stmt.is_err());
     }
 }

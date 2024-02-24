@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     color::Color,
-    parser::{Expression, Function, LetStatement, RgbFunctoin, Statement},
+    parser::{ColorExpression, Function, LetStatement, PlusFunction, RgbFunctoin, Statement},
 };
 
 pub struct Envroiment {
@@ -10,7 +10,7 @@ pub struct Envroiment {
 }
 
 pub enum RuntimeFault {
-    NotFound { target_name: String },
+    NotFound { target_name: String }
 }
 
 impl RuntimeFault {
@@ -18,7 +18,7 @@ impl RuntimeFault {
         match self {
             RuntimeFault::NotFound { target_name } => {
                 println!("RuntimeError: {} is Not Found", target_name)
-            }
+            },
         }
     }
 }
@@ -44,9 +44,15 @@ pub fn eval(stmt: Statement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
 }
 
 fn eval_let_statement(let_stmt: LetStatement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
-    let value = match let_stmt.right {
-        Expression::Raw(color) => color,
-        Expression::Identifier(name) => match env.map.get(&name) {
+    let value = eval_expression(let_stmt.right, env)?;
+    env.map.insert(let_stmt.left, value);
+    Ok(())
+}
+
+fn eval_expression(exp: ColorExpression,env: &mut Envroiment) -> Result<Color, RuntimeFault> {
+    let color = match exp {
+        ColorExpression::Raw(color) => color,
+        ColorExpression::Identifier(name) => match env.map.get(&name) {
             Some(c) => c.clone(),
             None => {
                 return Err(RuntimeFault::NotFound {
@@ -54,12 +60,21 @@ fn eval_let_statement(let_stmt: LetStatement, env: &mut Envroiment) -> Result<()
                 });
             }
         },
-        Expression::Function(f) => match f {
+        ColorExpression::Function(f) => match f {
             Function::Rgb(rgb_f) => eval_rgb_function(rgb_f),
+            Function::Plus(plus_f) => eval_plus_function(plus_f,env)?
         },
     };
-    env.map.insert(let_stmt.left, value);
-    Ok(())
+    
+    Ok(color)
+}
+
+fn eval_plus_function(plus_f: PlusFunction, env: &mut Envroiment) -> Result<Color,RuntimeFault>{
+    let mut color = eval_expression(*plus_f.arg_expression, env)?;
+    color.r += plus_f.arg_r;
+    color.g += plus_f.arg_g;
+    color.b += plus_f.arg_b;
+    Ok(color)
 }
 
 fn eval_rgb_function(rgbf: RgbFunctoin) -> Color {

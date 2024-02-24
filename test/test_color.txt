@@ -13,17 +13,25 @@ let hello = color2;
 
 let aaa = bbb;
 
-let back_color_a = background_color;
-let back_color_b = background_color;
-let back_color_c = background_color;
-let back_color_d = background_color;
-let back_color_e = background_color;
-let back_color_f = background_color;
-let back_color_g = background_color;
 let back_color_i = background_color;
 
-
-let back_color_h = rgb( 20, 40, 50 );
-let back_color_j = rgb( 20, 40, 50 );
 let back_color_k = rgb( 20, 40, 50 );
+
 let color aaa;
+
+let test_plus = plus( aaa , 10, 10, 10);
+
+let test_plus2 = plus(
+    plus( 
+        rgb( 10,10,10 ),
+        20,20,20
+    ), 
+    10, 10, 10
+);
+
+let plus = #ffffff;
+
+let test_plus3 = plus(
+    plus( rgb( hello,10,10) ,20,20,20) , 
+    10, 10, 10
+);
