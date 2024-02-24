@@ -1,12 +1,88 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::{Arc, Mutex}};
 
 use crate::{
     color::Color,
-    parser::{ColorExpression, Function, LetStatement, MinusFunction, PlusFunction, RgbFunctoin, Statement},
+    parser::{
+        ColorExpression, Function, LetStatement, MinusFunction, PlusFunction, RgbFunctoin,
+        Statement,
+    },
 };
 
-pub struct Envroiment {
+pub trait Env {
+    fn get(&self, name: &String) -> Option<Color>;
+    fn set(&mut self, name: String, color: Color);
+    fn include(&mut self, child: &dyn Env);
+    // パフォーマンス悪い気がする
+    fn vars(&self) -> Vec<(String,Color)>;
+}
+
+pub struct RootEnvroiment {
     map: HashMap<String, Color>,
+}
+impl RootEnvroiment {
+    pub fn new() -> Self {
+        RootEnvroiment {
+            map: HashMap::new(),
+        }
+    }
+    
+    pub fn print(&self) {
+        for (var_id, var_value) in &self.map {
+            println!("{} = {:?}", var_id, var_value)
+        }
+    }
+}
+
+impl Env for RootEnvroiment {
+    fn get(&self, name: &String) -> Option<Color> {
+        let Some(c) = self.map.get(name) else {
+            return None;
+        };
+        Some(c.clone())
+    }
+
+    fn set(&mut self, name: String, color: Color) {
+        self.map.insert(name, color);
+    }
+    
+    fn include(&mut self, child: &dyn Env) {
+        let vars = child.vars();
+        for var in vars {
+            self.set(var.0, var.1);
+        } 
+    }
+    
+    fn vars(&self) -> Vec<(String,Color)> {
+        self.map.clone().into_iter().collect()
+    }
+}
+
+pub struct LocalEnvroiment {
+    parent: Arc<Mutex<dyn Env>>,
+    map: HashMap<String, Color>,
+}
+
+impl Env for LocalEnvroiment {
+    fn set(&mut self, name: String, color: Color) {
+        self.map.insert(name, color);
+    }
+    fn get(&self, name: &String) -> Option<Color> {
+        match self.map.get(name) {
+            Some(c) => Some(c.clone()),
+            None => {
+                let l = self.parent.lock().unwrap();
+                l.get(name)
+            }
+        }
+    }
+    fn include(&mut self, child: &dyn Env) {
+        for var in child.vars() {
+            self.set(var.0, var.1)
+        }
+    }
+    fn vars(&self) -> Vec<(String,Color)> {
+        self.map.clone().into_iter().collect()
+    }
 }
 
 pub enum RuntimeFault {
@@ -23,37 +99,35 @@ impl RuntimeFault {
     }
 }
 
-impl Envroiment {
-    pub fn new() -> Self {
-        Envroiment {
+impl LocalEnvroiment {
+    pub fn new(parent_env: Arc<Mutex<dyn Env>>) -> Self {
+        LocalEnvroiment {
+            parent: parent_env,
             map: HashMap::new(),
-        }
-    }
-
-    pub fn print(&self) {
-        for (var_id, var_value) in &self.map {
-            println!("{} = {:?}", var_id, var_value)
         }
     }
 }
 
-pub fn eval(stmt: Statement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
+pub fn eval(stmt: Statement, env: &mut LocalEnvroiment) -> Result<(), RuntimeFault> {
     match stmt {
         Statement::Let(let_stmt) => eval_let_statement(let_stmt, env),
     }
 }
 
-fn eval_let_statement(let_stmt: LetStatement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
+fn eval_let_statement(
+    let_stmt: LetStatement,
+    env: &mut LocalEnvroiment,
+) -> Result<(), RuntimeFault> {
     let value = eval_expression(let_stmt.right, env)?;
     env.map.insert(let_stmt.left, value);
     Ok(())
 }
 
-fn eval_expression(exp: ColorExpression, env: &mut Envroiment) -> Result<Color, RuntimeFault> {
+fn eval_expression(exp: ColorExpression, env: &mut LocalEnvroiment) -> Result<Color, RuntimeFault> {
     let color = match exp {
         ColorExpression::Raw(color) => color,
-        ColorExpression::Identifier(name) => match env.map.get(&name) {
-            Some(c) => c.clone(),
+        ColorExpression::Identifier(name) => match env.get(&name) {
+            Some(c) => c,
             None => {
                 return Err(RuntimeFault::NotFound {
                     target_name: name.clone(),
@@ -62,7 +136,7 @@ fn eval_expression(exp: ColorExpression, env: &mut Envroiment) -> Result<Color, 
         },
         ColorExpression::Function(f) => match f {
             Function::Rgb(rgb_f) => eval_rgb_function(rgb_f),
-            Function::Plus(plus_f) => eval_plus_function(plus_f,env)?,
+            Function::Plus(plus_f) => eval_plus_function(plus_f, env)?,
             Function::Minus(minus_f) => eval_minus_function(minus_f, env)?,
         },
     };
@@ -70,7 +144,10 @@ fn eval_expression(exp: ColorExpression, env: &mut Envroiment) -> Result<Color, 
     Ok(color)
 }
 
-fn eval_minus_function(minus_f: MinusFunction, env: &mut Envroiment) -> Result<Color, RuntimeFault> {
+fn eval_minus_function(
+    minus_f: MinusFunction,
+    env: &mut LocalEnvroiment,
+) -> Result<Color, RuntimeFault> {
     let mut color = eval_expression(*minus_f.arg_expression, env)?;
     color.r -= minus_f.arg_r;
     color.g -= minus_f.arg_g;
@@ -78,7 +155,10 @@ fn eval_minus_function(minus_f: MinusFunction, env: &mut Envroiment) -> Result<C
     Ok(color)
 }
 
-fn eval_plus_function(plus_f: PlusFunction, env: &mut Envroiment) -> Result<Color, RuntimeFault> {
+fn eval_plus_function(
+    plus_f: PlusFunction,
+    env: &mut LocalEnvroiment,
+) -> Result<Color, RuntimeFault> {
     let mut color = eval_expression(*plus_f.arg_expression, env)?;
     color.r += plus_f.arg_r;
     color.g += plus_f.arg_g;
