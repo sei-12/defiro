@@ -14,7 +14,7 @@ fn pairwise_concat(chars: &mut dyn Iterator<Item = char>) -> Vec<String> {
     ret_vec
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug,Clone, PartialEq)]
 pub struct Color {
     pub r: u32,
     pub g: u32,

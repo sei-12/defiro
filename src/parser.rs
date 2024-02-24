@@ -4,6 +4,7 @@ use crate::{color::Color, lexer::Token};
 
 
 pub enum Expression {
+    Identifier(String),
     Raw(Color)    
 }
 
@@ -28,6 +29,7 @@ fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<Expression,ParseFaul
     
     match front_token {
         Token::HexColor(color) => Ok(Expression::Raw(color)),
+        Token::Identifier(name) => Ok(Expression::Identifier(name)),
         _ => Err(ParseFault::TODO)
     }
 }
@@ -84,11 +86,28 @@ mod test {
                 match le.right {
                     Expression::Raw(color) => {
                         assert_eq!(color,Color { r: 10, g: 10, b: 10 })
-                    }
+                    },
+                    _ => panic!()
+                }
+            }
+        }
+        
+        let mut test = "let a = bbb".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens).unwrap();
+        match stmt {
+            Statement::Let(le) => {
+                assert_eq!(le.left,"a".to_string());
+                match le.right {
+                    Expression::Identifier(name) => {
+                        assert_eq!(name,"bbb".to_string())
+                    },
+                    _ => panic!()
                 }
             }
         }
 
+        
     }
 
         

@@ -1,5 +1,20 @@
+let background_color = #202030;
+
 let color1 = #ffffff;
 let color2 = #fafafa;
 let color3 = #00aaaa;
 let color4 = #aaabbb;
 let color1 = #ccccca;
+
+let hello = color2;
+
+let aaa = bbb;
+
+let back_color_a = background_color;
+let back_color_b = background_color;
+let back_color_c = background_color;
+let back_color_d = background_color;
+let back_color_e = background_color;
+let back_color_f = background_color;
+let back_color_g = background_color;
+let back_color_i = background_color;

@@ -29,10 +29,14 @@ fn main() {
         file_chars.pop_front();
 
         let line_string: String = line.into_iter().collect();
-        let mut tmp = line_string.chars().collect();
-        let tokens = lexer(&mut tmp).unwrap();
+        let mut chars = line_string.chars().collect();
+        let tokens = lexer(&mut chars).unwrap();
         let line_stmt = parse_tokens_to_statement(tokens).unwrap();
-        eval(line_stmt, &mut env)
+        let result = eval(line_stmt, &mut env);
+
+        if let Err(runtime_fault) = result {
+            runtime_fault.print_msg();
+        };
     }
 
     env.print();
