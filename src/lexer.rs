@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use crate::{color::Color, utils::peek_take_while};
 
+type TokenInt = u32;
 
 fn pops_front<T>(iter: &mut VecDeque<T>, length: usize) -> Vec<T> {
     let mut ret_vec = Vec::with_capacity(length);
@@ -106,6 +107,11 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
             continue; 
         }
         
+        if let Ok(int) = word.parse::<TokenInt>() {
+            tokens.push_back(Token::Int(int));
+            continue;
+        }
+        
         tokens.push_back(Token::Identifier(word))
     }
 
@@ -121,7 +127,7 @@ pub enum Token {
     // Include,
     HexColor(Color),
     Identifier(String), // 標準搭載された関数も含める
-    // Int(String),
+    Int(TokenInt),
     Assign,
     LeftPare,
     RightPare,
@@ -294,6 +300,49 @@ mod test {
                 Token::LeftPare,
                 Token::Identifier("aaa".to_string()),
                 Token::RightPare, 
+            ]
+        );
+        
+
+        let mut test = "a-b 100-10".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Identifier("a-b".to_string()),
+                Token::Identifier("100-10".to_string()),
+            ]
+        );
+
+        let mut test = "4294967296 4294967295 0 -1".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Identifier("4294967296".to_string()),
+                Token::Int(4294967295),
+                Token::Int(0),
+                Token::Identifier("-1".to_string()),
+            ]
+        );
+
+
+        let mut test = "let a10 = rgb(10) 100 a0 0xa0 4294967297".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Let,
+                Token::Identifier("a10".to_string()),
+                Token::Assign, 
+                Token::Identifier("rgb".to_string()),
+                Token::LeftPare,
+                Token::Int(10),
+                Token::RightPare, 
+                Token::Int(100),
+                Token::Identifier("a0".to_string()),
+                Token::Identifier("0xa0".to_string()),
+                Token::Identifier("4294967297".to_string()),
             ]
         );
     }
