@@ -41,6 +41,15 @@ fn is_skip_char(ch: char) -> bool {
 pub enum LexFault {
     Value,
 }
+impl LexFault {
+    pub fn msg(&self) -> String {
+        match self {
+            LexFault::Value => {
+                format!("LexError: value error")
+            }
+        } 
+    }
+}
 
 pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault> {
     let mut tokens = VecDeque::new();

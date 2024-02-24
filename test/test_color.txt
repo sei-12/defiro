@@ -6,6 +6,9 @@ let color3 = #00aaaa;
 let color4 = #aaabbb;
 let color1 = #ccccca;
 
+let color100 = #aa;
+
+
 let hello = color2;
 
 let aaa = bbb;
@@ -20,3 +23,6 @@ let back_color_g = background_color;
 let back_color_i = background_color;
 
 
+let back_color_h = rgb( 20, 40, 50 );
+let back_color_h = rgb( 20, 40, 50 );
+let back_color_h = rgb( 20, 40, 50 );

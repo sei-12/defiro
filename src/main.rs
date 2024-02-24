@@ -30,7 +30,14 @@ fn main() {
 
         let line_string: String = line.into_iter().collect();
         let mut chars = line_string.chars().collect();
-        let tokens = lexer(&mut chars).unwrap();
+        let tokens = match lexer(&mut chars) {
+            Ok( tokens ) => tokens,
+            Err(err) => {
+                println!("{}",err.msg());
+                continue;
+            },
+        };
+
         if tokens.len() == 0 {
             continue;
         }
