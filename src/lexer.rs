@@ -27,6 +27,9 @@ fn is_token_char(ch: char) -> bool {
     if ch == ')' {
         return true;
     }
+    if ch == ',' {
+        return true;
+    }
     false
 }
 
@@ -82,6 +85,10 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
             tokens.push_back(Token::RightPare);
             continue;
         }
+        if ch == ',' {
+            tokens.push_back(Token::Comma);
+            continue;
+        }
 
         if ch == '#' {
             let hex = pops_front(&mut chars, 6);
@@ -131,7 +138,7 @@ pub enum Token {
     Assign,
     LeftPare,
     RightPare,
-    // Comma,
+    Comma,
 }
 
 
@@ -142,7 +149,7 @@ mod test {
 
     #[test]
     fn _parse_line() {
-        let mut test = "()=".chars().collect();
+        let mut test = "()=,".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
         assert_eq!(
             parsed,
@@ -150,6 +157,7 @@ mod test {
                 Token::LeftPare,
                 Token::RightPare,
                 Token::Assign,
+                Token::Comma,
             ]
         );
 
@@ -326,6 +334,33 @@ mod test {
             ]
         );
 
+
+        let mut test = "a(1,3,4,hello,  aaa,a-b, \n aaa\na,s)".chars().collect();
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(
+            parsed,
+            vec![
+                Token::Identifier("a".to_string()),
+                Token::LeftPare,
+                Token::Int(1),
+                Token::Comma,
+                Token::Int(3),
+                Token::Comma,
+                Token::Int(4),
+                Token::Comma,
+                Token::Identifier("hello".to_string()),
+                Token::Comma,
+                Token::Identifier("aaa".to_string()),
+                Token::Comma,
+                Token::Identifier("a-b".to_string()),
+                Token::Comma,
+                Token::Identifier("aaa".to_string()),
+                Token::Identifier("a".to_string()),
+                Token::Comma,
+                Token::Identifier("s".to_string()),
+                Token::RightPare
+            ]
+        );
 
         let mut test = "let a10 = rgb(10) 100 a0 0xa0 4294967297".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
