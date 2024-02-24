@@ -1,3 +1,5 @@
 #!/bin/bash
 
-cargo build && cat ./test/test_color.txt | target/debug/defiro
+cargo build && \
+cargo test && \
+cat ./test/test_color.txt | target/debug/defiro

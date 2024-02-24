@@ -62,10 +62,7 @@ fn main() {
 
     let child_env = run(env.clone(), file_chars);
     
-    let mut mut_env = env.lock().unwrap();
-    mut_env.include(&child_env);
-    
-    mut_env.print();
+    child_env.print_vars();
 }
 
 

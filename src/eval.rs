@@ -16,44 +16,24 @@ pub trait Env {
     fn vars(&self) -> Vec<(String,Color)>;
 }
 
-pub struct RootEnvroiment {
-    map: HashMap<String, Color>,
-}
+pub struct RootEnvroiment { }
 impl RootEnvroiment {
     pub fn new() -> Self {
-        RootEnvroiment {
-            map: HashMap::new(),
-        }
-    }
-    
-    pub fn print(&self) {
-        for (var_id, var_value) in &self.map {
-            println!("{} = {:?}", var_id, var_value)
-        }
+        RootEnvroiment { }
     }
 }
 
 impl Env for RootEnvroiment {
-    fn get(&self, name: &String) -> Option<Color> {
-        let Some(c) = self.map.get(name) else {
-            return None;
-        };
-        Some(c.clone())
+    fn get(&self, _name: &String) -> Option<Color> {
+        None
     }
 
-    fn set(&mut self, name: String, color: Color) {
-        self.map.insert(name, color);
-    }
+    fn set(&mut self, _name: String, _color: Color) { }
     
-    fn include(&mut self, child: &dyn Env) {
-        let vars = child.vars();
-        for var in vars {
-            self.set(var.0, var.1);
-        } 
-    }
+    fn include(&mut self, _child: &dyn Env) { }
     
     fn vars(&self) -> Vec<(String,Color)> {
-        self.map.clone().into_iter().collect()
+        vec![]
     }
 }
 
@@ -104,6 +84,12 @@ impl LocalEnvroiment {
         LocalEnvroiment {
             parent: parent_env,
             map: HashMap::new(),
+        }
+    }
+    
+    pub fn print_vars(&self){
+        for var in self.vars() {
+            println!("{} {:?}", var.0, var.1)
         }
     }
 }
