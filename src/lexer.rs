@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use crate::{color::Color, utils::peek_take_while};
 
-type TokenInt = u32;
+pub type TokenInt = u32;
 
 fn pops_front<T>(iter: &mut VecDeque<T>, length: usize) -> Vec<T> {
     let mut ret_vec = Vec::with_capacity(length);

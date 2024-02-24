@@ -41,7 +41,13 @@ fn main() {
         if tokens.len() == 0 {
             continue;
         }
-        let line_stmt = parse_tokens_to_statement(tokens).unwrap();
+        let line_stmt = match parse_tokens_to_statement(tokens) {
+            Ok(stmt) => stmt,
+            Err(err) => {
+                println!("{}",err.msg());
+                continue;
+            }
+        };
         let result = eval(line_stmt, &mut env);
 
         if let Err(runtime_fault) = result {
