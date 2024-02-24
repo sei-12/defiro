@@ -17,9 +17,17 @@ pub struct PlusFunction {
     pub arg_b: TokenInt,
 }
 
+pub struct MinusFunction {
+    pub arg_expression: Box<ColorExpression>,
+    pub arg_r: TokenInt,
+    pub arg_g: TokenInt,
+    pub arg_b: TokenInt,
+}
+
 pub enum Function {
     Rgb(RgbFunctoin),
     Plus(PlusFunction),
+    Minus(MinusFunction),
 }
 
 pub enum ColorExpression {
@@ -41,7 +49,7 @@ pub enum Statement {
 pub enum ParseFault {
     TODO,
     Syntax,
-    IsFunction { target_name: String},
+    IsFunction { target_name: String },
 }
 impl ParseFault {
     pub fn msg(&self) -> String {
@@ -51,9 +59,9 @@ impl ParseFault {
             }
             ParseFault::TODO => {
                 format!("ParseError: TODO")
-            },
+            }
             ParseFault::IsFunction { target_name } => {
-                format!("ParseError: {} is Function",target_name)
+                format!("ParseError: {} is Function", target_name)
             }
         }
     }
@@ -63,6 +71,9 @@ fn is_function_name(name: &String) -> bool {
         return true;
     };
     if name == "plus" {
+        return true;
+    };
+    if name == "minus" {
         return true;
     };
 
@@ -101,7 +112,19 @@ fn parse_rgb_function(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, P
     })))
 }
 
-fn parse_plus_fucntion(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault>{
+fn parse_minus_function(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault> {
+    let (exp, r, g, b) = parse_minus_and_plus(tokens)?;
+    Ok(ColorExpression::Function(Function::Minus(MinusFunction {
+        arg_expression: Box::new(exp),
+        arg_r: r,
+        arg_g: g,
+        arg_b: b,
+    })))
+}
+
+fn parse_minus_and_plus(
+    tokens: &mut VecDeque<Token>,
+) -> Result<(ColorExpression, TokenInt, TokenInt, TokenInt), ParseFault> {
     check_next_token(tokens, Token::LeftPare)?;
     let exp = parse_expression(tokens)?;
 
@@ -118,12 +141,17 @@ fn parse_plus_fucntion(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, 
         return Err(ParseFault::Syntax);
     };
     check_next_token(tokens, Token::RightPare)?;
-    
-    Ok(ColorExpression::Function(Function::Plus(PlusFunction { 
-        arg_expression: Box::new(exp) ,
-        arg_r: r, 
-        arg_g: g, 
-        arg_b: b 
+
+    Ok((exp, r, g, b))
+}
+
+fn parse_plus_fucntion(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault> {
+    let (exp, r, g, b) = parse_minus_and_plus(tokens)?;
+    Ok(ColorExpression::Function(Function::Plus(PlusFunction {
+        arg_expression: Box::new(exp),
+        arg_r: r,
+        arg_g: g,
+        arg_b: b,
     })))
 }
 
@@ -137,7 +165,9 @@ fn parse_function(
     if name == "plus" {
         return parse_plus_fucntion(tokens);
     };
-
+    if name == "minus" {
+        return parse_minus_function(tokens);
+    }
 
     panic!("bug")
 }
@@ -159,7 +189,6 @@ fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, Par
         _ => Err(ParseFault::TODO),
     }?;
 
-
     Ok(exp)
 }
 
@@ -168,16 +197,17 @@ fn parse_let_statement(tokens: &mut VecDeque<Token>) -> Result<LetStatement, Par
         return Err(ParseFault::TODO);
     };
 
-
     let identifier = match iden_token {
         Token::Identifier(id) => id,
         _ => {
             return Err(ParseFault::TODO);
         }
     };
-    
-    if is_function_name(&identifier){
-        return  Err(ParseFault::IsFunction { target_name: identifier });
+
+    if is_function_name(&identifier) {
+        return Err(ParseFault::IsFunction {
+            target_name: identifier,
+        });
     };
 
     let Some(assgin_token) = tokens.pop_front() else {
@@ -205,7 +235,9 @@ pub fn parse_tokens_to_statement(
 
     let stmt = match front_token {
         Token::Let => Statement::Let(parse_let_statement(&mut line_tokens)?),
-        _ => { return Err(ParseFault::Syntax);}
+        _ => {
+            return Err(ParseFault::Syntax);
+        }
     };
 
     if line_tokens.len() != 0 {
@@ -270,16 +302,14 @@ mod test {
             Statement::Let(le) => {
                 assert_eq!(le.left, "a".to_string());
                 match le.right {
-                    ColorExpression::Function(f) => {
-                        match f {
-                            Function::Rgb(rgbf) => {
-                                assert_eq!(rgbf.arg1_r, 1);
-                                assert_eq!(rgbf.arg2_g, 2);
-                                assert_eq!(rgbf.arg3_b, 3);
-                            }
-                            _ => panic!()
+                    ColorExpression::Function(f) => match f {
+                        Function::Rgb(rgbf) => {
+                            assert_eq!(rgbf.arg1_r, 1);
+                            assert_eq!(rgbf.arg2_g, 2);
+                            assert_eq!(rgbf.arg3_b, 3);
                         }
-                    }
+                        _ => panic!(),
+                    },
                     _ => panic!(),
                 }
             }

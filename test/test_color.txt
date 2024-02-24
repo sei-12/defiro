@@ -35,3 +35,6 @@ let test_plus3 = plus(
     plus( rgb( hello,10,10) ,20,20,20) , 
     10, 10, 10
 );
+
+let minus = #ffffff;
+let test_minus = minus( rgb(10,10,10), 10,10,10 )
