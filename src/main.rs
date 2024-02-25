@@ -121,6 +121,8 @@ mod test {
             ), 
             1,2,3
         );
+        
+        color7 = rgb(10,10,10);
         ";        
         let result = run(
             Arc::new(Mutex::new(RootEnvroiment::new())),
@@ -132,6 +134,7 @@ mod test {
         assert_eq!(result.get(&"color4".to_string()),  Some(Color{ r:  26, g:  36, b:  46 }));
         assert_eq!(result.get(&"color5".to_string()),  Some(Color{ r:  10, g:  10, b:  10 }));
         assert_eq!(result.get(&"color6".to_string()),  Some(Color{ r:  11, g:  10, b:  10 }));
+        assert_eq!(result.get(&"color7".to_string()),  Some(Color{ r:  10, g:  10, b:  10 }));
 
     }
 }

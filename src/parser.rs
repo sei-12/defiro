@@ -226,6 +226,29 @@ fn parse_let_statement(tokens: &mut VecDeque<Token>) -> Result<LetStatement, Par
     })
 }
 
+fn parse_short_let_statement(identifier: String, tokens: &mut VecDeque<Token>)-> Result<LetStatement, ParseFault> {
+    if is_function_name(&identifier) {
+        return Err(ParseFault::IsFunction {
+            target_name: identifier,
+        });
+    };
+
+    let Some(assgin_token) = tokens.pop_front() else {
+        return Err(ParseFault::TODO);
+    };
+
+    if assgin_token != Token::Assign {
+        return Err(ParseFault::TODO);
+    };
+
+    let exp = parse_expression(tokens)?;
+
+    Ok(LetStatement {
+        left: identifier,
+        right: exp,
+    })
+}
+
 pub fn parse_tokens_to_statement(
     mut line_tokens: VecDeque<Token>,
 ) -> Result<Statement, ParseFault> {
@@ -235,6 +258,7 @@ pub fn parse_tokens_to_statement(
 
     let stmt = match front_token {
         Token::Let => Statement::Let(parse_let_statement(&mut line_tokens)?),
+        Token::Identifier(identifier) => Statement::Let(parse_short_let_statement(identifier, &mut line_tokens)?),
         _ => {
             return Err(ParseFault::Syntax);
         }
@@ -314,6 +338,83 @@ mod test {
                 }
             }
         }
+        
+        let mut test = "a = #0a0a0a".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens).unwrap();
+        match stmt {
+            Statement::Let(le) => {
+                assert_eq!(le.left, "a".to_string());
+                match le.right {
+                    ColorExpression::Raw(color) => {
+                        assert_eq!(
+                            color,
+                            Color {
+                                r: 10,
+                                g: 10,
+                                b: 10
+                            }
+                        )
+                    }
+                    _ => panic!(),
+                }
+            }
+        }
+
+        let mut test = "a = bbb".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens).unwrap();
+        match stmt {
+            Statement::Let(le) => {
+                assert_eq!(le.left, "a".to_string());
+                match le.right {
+                    ColorExpression::Identifier(name) => {
+                        assert_eq!(name, "bbb".to_string())
+                    }
+                    _ => panic!(),
+                }
+            }
+        }
+        
+        
+        let mut test = "a = rgb(1,2,3)".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens).unwrap();
+        match stmt {
+            Statement::Let(le) => {
+                assert_eq!(le.left, "a".to_string());
+                match le.right {
+                    ColorExpression::Function(f) => match f {
+                        Function::Rgb(rgbf) => {
+                            assert_eq!(rgbf.arg1_r, 1);
+                            assert_eq!(rgbf.arg2_g, 2);
+                            assert_eq!(rgbf.arg3_b, 3);
+                        }
+                        _ => panic!(),
+                    },
+                    _ => panic!(),
+                }
+            }
+        }
+        let mut test = "a = rgb(1,2,3)()".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens);
+        assert!(stmt.is_err());
+
+        let mut test = "a = rgb(hello,2,3)()".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens);
+        assert!(stmt.is_err());
+
+        let mut test = "a rgb(1,2,3)()".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens);
+        assert!(stmt.is_err());
+
+        let mut test = "a = a g".chars().collect();
+        let tokens = lexer(&mut test).unwrap();
+        let stmt = parse_tokens_to_statement(tokens);
+        assert!(stmt.is_err());
 
         let mut test = "let a = rgb(1,2,3)()".chars().collect();
         let tokens = lexer(&mut test).unwrap();
