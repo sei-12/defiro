@@ -7,35 +7,6 @@ use crate::{
     }, run::run,
 };
 
-// pub trait Env {
-//     fn get(&self, name: &String) -> Option<Color>;
-//     fn set(&mut self, name: String, color: Color);
-//     fn include(&mut self, child: &dyn Env);
-//     // パフォーマンス悪い気がする
-//     fn vars(&self) -> Vec<(String,Color)>;
-// }
-
-// pub struct RootEnvroiment { }
-// impl RootEnvroiment {
-//     pub fn new() -> Self {
-//         RootEnvroiment { }
-//     }
-// }
-
-// impl Env for RootEnvroiment {
-//     fn get(&self, _name: &String) -> Option<Color> {
-//         None
-//     }
-
-//     fn set(&mut self, _name: String, _color: Color) { }
-    
-//     fn include(&mut self, _child: &dyn Env) { }
-    
-//     fn vars(&self) -> Vec<(String,Color)> {
-//         vec![]
-//     }
-// }
-
 pub struct Envroiment {
     map: HashMap<String, Color>,
 }
@@ -44,14 +15,24 @@ impl Envroiment {
     pub fn set(&mut self, name: String, color: Color) {
         self.map.insert(name, color);
     }
+
     pub fn get(&self, name: &String) -> Option<Color> {
         match self.map.get(name) {
             Some(c) => Some(c.clone()),
             None => None
         }
     }
-    pub fn vars(&self) -> Vec<(String,Color)> {
-        self.map.clone().into_iter().collect()
+
+    pub fn new() -> Self {
+        Envroiment {
+            map: HashMap::new(),
+        }
+    }
+    
+    pub fn print_vars(&self){
+        for var in &self.map {
+            println!("{} {:?}", var.0, var.1)
+        }
     }
 }
 
@@ -69,20 +50,6 @@ impl RuntimeFault {
             RuntimeFault::NoSuchFile { path } => {
                 println!("RuntimeError: No such file. path:{}", path)
             }
-        }
-    }
-}
-
-impl Envroiment {
-    pub fn new() -> Self {
-        Envroiment {
-            map: HashMap::new(),
-        }
-    }
-    
-    pub fn print_vars(&self){
-        for var in self.vars() {
-            println!("{} {:?}", var.0, var.1)
         }
     }
 }
