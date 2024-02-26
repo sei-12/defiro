@@ -41,8 +41,13 @@ pub struct LetStatement {
     pub right: ColorExpression,
 }
 
+pub struct IncludeStatement {
+    pub path: String    
+}
+
 pub enum Statement {
     Let(LetStatement),
+    Include(IncludeStatement),
 }
 
 #[derive(Debug)]
@@ -249,6 +254,19 @@ fn parse_short_let_statement(identifier: String, tokens: &mut VecDeque<Token>)->
     })
 }
 
+fn parse_include_statement(tokens: &mut VecDeque<Token>) -> Result<IncludeStatement,ParseFault>{
+    let Some(path_token) = tokens.pop_front() else {
+        return Err(ParseFault::TODO);
+    };
+    
+    let path = match path_token {
+        Token::Identifier(str) => { str },
+        _ => { return Err(ParseFault::Syntax);}
+    };
+    
+    Ok(IncludeStatement { path })
+}
+
 pub fn parse_tokens_to_statement(
     mut line_tokens: VecDeque<Token>,
 ) -> Result<Statement, ParseFault> {
@@ -259,6 +277,7 @@ pub fn parse_tokens_to_statement(
     let stmt = match front_token {
         Token::Let => Statement::Let(parse_let_statement(&mut line_tokens)?),
         Token::Identifier(identifier) => Statement::Let(parse_short_let_statement(identifier, &mut line_tokens)?),
+        Token::Include => Statement::Include(parse_include_statement(&mut line_tokens)?),
         _ => {
             return Err(ParseFault::Syntax);
         }
@@ -301,7 +320,8 @@ mod test {
                     }
                     _ => panic!(),
                 }
-            }
+            },
+            _ => panic!()
         }
 
         let mut test = "let a = bbb".chars().collect();
@@ -316,7 +336,8 @@ mod test {
                     }
                     _ => panic!(),
                 }
-            }
+            },
+            _ => panic!()
         }
 
         let mut test = "let a = rgb(1,2,3)".chars().collect();
@@ -336,7 +357,8 @@ mod test {
                     },
                     _ => panic!(),
                 }
-            }
+            },
+            _ => panic!()
         }
         
         let mut test = "a = #0a0a0a".chars().collect();
@@ -358,7 +380,8 @@ mod test {
                     }
                     _ => panic!(),
                 }
-            }
+            },
+            _ => panic!()
         }
 
         let mut test = "a = bbb".chars().collect();
@@ -373,7 +396,8 @@ mod test {
                     }
                     _ => panic!(),
                 }
-            }
+            },
+            _ => panic!()
         }
         
         
@@ -394,7 +418,8 @@ mod test {
                     },
                     _ => panic!(),
                 }
-            }
+            },
+            _ => panic!()
         }
         let mut test = "a = rgb(1,2,3)()".chars().collect();
         let tokens = lexer(&mut test).unwrap();

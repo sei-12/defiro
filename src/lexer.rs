@@ -114,6 +114,11 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
             continue; 
         }
         
+        if word == "include"{
+            tokens.push_back(Token::Include);
+            continue;
+        }
+        
         if let Ok(int) = word.parse::<TokenInt>() {
             tokens.push_back(Token::Int(int));
             continue;
@@ -131,7 +136,7 @@ pub enum Token {
     // LetIfNotExists,
     // Const,
     // ConstIfNotExists,
-    // Include,
+    Include,
     HexColor(Color),
     Identifier(String), // 標準搭載された関数も含める
     Int(TokenInt),
