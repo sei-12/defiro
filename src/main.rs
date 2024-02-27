@@ -8,7 +8,7 @@ mod utils;
 
 use clap::Parser;
 use std::{
-    collections::VecDeque, fs::read_to_string, io::{BufReader, Read}
+    collections::VecDeque, fs::read_to_string, io::{BufReader, Read}, path::PathBuf
 };
 use eval::Envroiment;
 use run::run;
@@ -21,8 +21,17 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let file_string = match args.file_path {
-        Some(path) => read_to_string(path).unwrap(),
+    let mut env = Envroiment::new();
+    
+    let file_path = match args.file_path {
+        Some(file_path) => Some(PathBuf::from(&file_path)),
+        None => None
+    };
+
+    let file_string = match file_path {
+        Some(ref path) => { 
+            read_to_string(path).unwrap()
+        },
         None => {
             let mut reader = BufReader::new(std::io::stdin());
             let mut stdin_string = String::new();
@@ -32,9 +41,8 @@ fn main() {
     };
 
     let file_chars: VecDeque<char> = file_string.chars().collect();
-    let mut env = Envroiment::new();
 
-    run(&mut env, file_chars);
+    run(&mut env, file_chars, file_path);
 
     env.print_vars();
     for err in env.faults {

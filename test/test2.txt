@@ -1,4 +1,0 @@
-
-
-include /home/sei12/Documents/defiro/test/test3.txt;
-aaa = plus( hello , 10, 12, 14 );

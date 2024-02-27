@@ -1,15 +1,21 @@
+// use std::fs;
 use std::{collections::HashMap, fs::read_to_string  };
-use std::path::Path;
+use std::path::PathBuf;
 
+mod include_file_stack;
+use include_file_stack::IncludeFileStack;
 use crate::{
     color::Color, fault , parser::{
         ColorExpression, Function, IncludeStatement, LetStatement, MinusFunction, PlusFunction, RgbFunctoin, Statement
     }, run::run
 };
 
+use self::include_file_stack::IncludeFileStackFault;
+
 pub struct Envroiment {
     map: HashMap<String, Color>,
-    pub faults: Vec<Box<dyn fault::Fault>>
+    pub faults: Vec<Box<dyn fault::Fault>>,
+    pub include_file_stack: IncludeFileStack
 }
 
 impl Envroiment {
@@ -27,7 +33,8 @@ impl Envroiment {
     pub fn new() -> Self {
         Envroiment {
             map: HashMap::new(),
-            faults: Vec::new()
+            faults: Vec::new(),
+            include_file_stack: IncludeFileStack::new()
         }
     }
     
@@ -40,14 +47,22 @@ impl Envroiment {
 
 pub enum RuntimeFault {
     NotFound { target_name: String },
-    NoSuchFile { path: String }
+    NoSuchFile { path: String },
+    TodoRename {}
+}
+
+impl From<IncludeFileStackFault> for RuntimeFault {
+    fn from(_value: IncludeFileStackFault) -> Self {
+        RuntimeFault::TodoRename {  }
+    }    
 }
 
 impl fault::Fault for RuntimeFault {
     fn msg(&self) -> String {
         match self {
             RuntimeFault::NotFound { target_name } => format!("RuntimeError: {} is Not Found", target_name) ,
-            RuntimeFault::NoSuchFile { path } => format!("RuntimeError: No such file. path:{}", path)
+            RuntimeFault::NoSuchFile { path } => format!("RuntimeError: No such file. path:{}", path),
+            RuntimeFault::TodoRename {  } => format!("todo")
         }
     }    
 }
@@ -59,9 +74,10 @@ pub fn eval_include_stmt(include_stmt: IncludeStatement, env: &mut Envroiment) -
         Err(_) => include_stmt.path.clone()
     };
 
-    let file_path = Path::new(&file_path_str);
+    // let file_path = Path::new(&file_path_str);
+    let file_path = PathBuf::from(&file_path_str);
 
-    let file_string = match read_to_string(file_path) {
+    let file_string = match read_to_string(file_path.clone()) {
         Ok(str) => str,
         Err(_) => {
             return Err(RuntimeFault::NoSuchFile { path: include_stmt.path });    
@@ -69,7 +85,7 @@ pub fn eval_include_stmt(include_stmt: IncludeStatement, env: &mut Envroiment) -
     };
     
     let file_chars = file_string.chars().collect();
-    run(env, file_chars);
+    run(env, file_chars, Some(file_path));
 
     Ok(()) 
 }
