@@ -1,4 +1,5 @@
-use std::{collections::HashMap, fs::read_to_string };
+use std::{collections::HashMap, fs::read_to_string  };
+use std::path::Path;
 
 use crate::{
     color::Color, fault , parser::{
@@ -52,7 +53,15 @@ impl fault::Fault for RuntimeFault {
 }
 
 pub fn eval_include_stmt(include_stmt: IncludeStatement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
-    let file_string = match read_to_string(include_stmt.path.clone()) {
+
+    let file_path_str = match std::env::var("HOME") {
+        Ok( home_dir ) => include_stmt.path.replace("~", &home_dir),
+        Err(_) => include_stmt.path.clone()
+    };
+
+    let file_path = Path::new(&file_path_str);
+
+    let file_string = match read_to_string(file_path) {
         Ok(str) => str,
         Err(_) => {
             return Err(RuntimeFault::NoSuchFile { path: include_stmt.path });    

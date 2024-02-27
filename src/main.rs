@@ -24,4 +24,7 @@ fn main() {
     run(&mut env, file_chars);
 
     env.print_vars();
+    for err in env.faults {
+        println!("{}",err.msg());
+    }
 }
