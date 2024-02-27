@@ -1,10 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::{
-    eval::{eval, Envroiment},
-    lexer::lexer,
-    parser::parse_tokens_to_statement,
-    utils::peek_take_while,
+    eval::{eval, Envroiment}, fault::Fault, lexer::lexer, parser::parse_tokens_to_statement, utils::peek_take_while
 };
 
 pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>) {
@@ -22,6 +19,7 @@ pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>) {
             Ok(tokens) => tokens,
             Err(err) => {
                 println!("{}", err.msg());
+                env.faults.push(Box::new(err));
                 continue;
             }
         };
@@ -29,17 +27,21 @@ pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>) {
         if tokens.len() == 0 {
             continue;
         }
+
         let line_stmt = match parse_tokens_to_statement(tokens) {
             Ok(stmt) => stmt,
             Err(err) => {
                 println!("{}", err.msg());
+                env.faults.push(Box::new(err));
                 continue;
             }
         };
-        let result = eval(line_stmt, env);
 
-        if let Err(runtime_fault) = result {
-            runtime_fault.print_msg();
+        match eval(line_stmt, env) {
+            Err(runtime_fault) => {
+                env.faults.push(Box::new(runtime_fault))
+            },
+            _ => ()
         };
     }
 }
@@ -202,5 +204,53 @@ mod test {
             Some(Color { r: 20, g: 21, b: 32 })
         );
         
+        let code = "\
+        hello2 = hello
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"RuntimeError: hello is Not Found".to_string());
+        
+        let code = "\
+        include ./no_such
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"RuntimeError: No such file. path:./no_such".to_string());
+        
+        let code = "\
+        include ./test/test4.txt;
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"RuntimeError: foo is Not Found".to_string());
+
+        let code = "\
+        hello = #fffff;
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"LexError: value error".to_string());
+
+        let code = "\
+        hello = #ffffff hello;
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"ParseError: Syntax".to_string());
+
+        let code = "\
+        hello  #ffffff;
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"ParseError: Syntax".to_string());
+
+        let code = "\
+        hello hello2 = #ffffff;
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect());
+        assert_eq!(env.faults[0].msg(),"ParseError: Syntax".to_string());
     }
 }

@@ -1,14 +1,14 @@
 use std::{collections::HashMap, fs::read_to_string };
 
 use crate::{
-    color::Color,
-    parser::{
+    color::Color, fault , parser::{
         ColorExpression, Function, IncludeStatement, LetStatement, MinusFunction, PlusFunction, RgbFunctoin, Statement
-    }, run::run,
+    }, run::run
 };
 
 pub struct Envroiment {
     map: HashMap<String, Color>,
+    pub faults: Vec<Box<dyn fault::Fault>>
 }
 
 impl Envroiment {
@@ -26,6 +26,7 @@ impl Envroiment {
     pub fn new() -> Self {
         Envroiment {
             map: HashMap::new(),
+            faults: Vec::new()
         }
     }
     
@@ -41,17 +42,13 @@ pub enum RuntimeFault {
     NoSuchFile { path: String }
 }
 
-impl RuntimeFault {
-    pub fn print_msg(&self) {
+impl fault::Fault for RuntimeFault {
+    fn msg(&self) -> String {
         match self {
-            RuntimeFault::NotFound { target_name } => {
-                println!("RuntimeError: {} is Not Found", target_name)
-            },
-            RuntimeFault::NoSuchFile { path } => {
-                println!("RuntimeError: No such file. path:{}", path)
-            }
+            RuntimeFault::NotFound { target_name } => format!("RuntimeError: {} is Not Found", target_name) ,
+            RuntimeFault::NoSuchFile { path } => format!("RuntimeError: No such file. path:{}", path)
         }
-    }
+    }    
 }
 
 pub fn eval_include_stmt(include_stmt: IncludeStatement, env: &mut Envroiment) -> Result<(), RuntimeFault> {

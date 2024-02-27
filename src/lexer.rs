@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use crate::{color::Color, utils::peek_take_while};
+use crate::{color::Color, fault, utils::peek_take_while};
 
 pub type TokenInt = u32;
 
@@ -51,8 +51,8 @@ fn is_skip_char(ch: char) -> bool {
 pub enum LexFault {
     Value,
 }
-impl LexFault {
-    pub fn msg(&self) -> String {
+impl fault::Fault for LexFault {
+    fn msg(&self) -> String {
         match self {
             LexFault::Value => {
                 format!("LexError: value error")

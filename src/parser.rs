@@ -1,6 +1,5 @@
 use crate::{
-    color::Color,
-    lexer::{Token, TokenInt},
+    color::Color, fault, lexer::{Token, TokenInt}
 };
 use std::collections::VecDeque;
 
@@ -52,18 +51,14 @@ pub enum Statement {
 
 #[derive(Debug)]
 pub enum ParseFault {
-    TODO,
     Syntax,
     IsFunction { target_name: String },
 }
-impl ParseFault {
-    pub fn msg(&self) -> String {
+impl fault::Fault for ParseFault {
+    fn msg(&self) -> String {
         match self {
             ParseFault::Syntax => {
                 format!("ParseError: Syntax")
-            }
-            ParseFault::TODO => {
-                format!("ParseError: TODO")
             }
             ParseFault::IsFunction { target_name } => {
                 format!("ParseError: {} is Function", target_name)
@@ -179,7 +174,7 @@ fn parse_function(
 
 fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, ParseFault> {
     let Some(front_token) = tokens.pop_front() else {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     let exp = match front_token {
@@ -191,7 +186,7 @@ fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, Par
                 Ok(ColorExpression::Identifier(name))
             }
         }
-        _ => Err(ParseFault::TODO),
+        _ => Err(ParseFault::Syntax),
     }?;
 
     Ok(exp)
@@ -199,13 +194,13 @@ fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<ColorExpression, Par
 
 fn parse_let_statement(tokens: &mut VecDeque<Token>) -> Result<LetStatement, ParseFault> {
     let Some(iden_token) = tokens.pop_front() else {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     let identifier = match iden_token {
         Token::Identifier(id) => id,
         _ => {
-            return Err(ParseFault::TODO);
+            return Err(ParseFault::Syntax);
         }
     };
 
@@ -216,11 +211,11 @@ fn parse_let_statement(tokens: &mut VecDeque<Token>) -> Result<LetStatement, Par
     };
 
     let Some(assgin_token) = tokens.pop_front() else {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     if assgin_token != Token::Assign {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     let exp = parse_expression(tokens)?;
@@ -239,11 +234,11 @@ fn parse_short_let_statement(identifier: String, tokens: &mut VecDeque<Token>)->
     };
 
     let Some(assgin_token) = tokens.pop_front() else {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     if assgin_token != Token::Assign {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     let exp = parse_expression(tokens)?;
@@ -256,7 +251,7 @@ fn parse_short_let_statement(identifier: String, tokens: &mut VecDeque<Token>)->
 
 fn parse_include_statement(tokens: &mut VecDeque<Token>) -> Result<IncludeStatement,ParseFault>{
     let Some(path_token) = tokens.pop_front() else {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
     
     let path = match path_token {
@@ -271,7 +266,7 @@ pub fn parse_tokens_to_statement(
     mut line_tokens: VecDeque<Token>,
 ) -> Result<Statement, ParseFault> {
     let Some(front_token) = line_tokens.pop_front() else {
-        return Err(ParseFault::TODO);
+        return Err(ParseFault::Syntax);
     };
 
     let stmt = match front_token {

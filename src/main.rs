@@ -1,4 +1,5 @@
 mod color;
+mod fault;
 mod eval;
 mod lexer;
 mod parser;
