@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::{
-    eval::{eval, Envroiment}, fault::Fault, lexer::lexer, parser::parse_tokens_to_statement, utils::peek_take_while
+    eval::{eval, Envroiment}, lexer::lexer, parser::parse_tokens_to_statement, utils::peek_take_while
 };
 
 pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>) {
@@ -18,7 +18,6 @@ pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>) {
         let tokens = match lexer(&mut chars) {
             Ok(tokens) => tokens,
             Err(err) => {
-                println!("{}", err.msg());
                 env.faults.push(Box::new(err));
                 continue;
             }
@@ -31,7 +30,6 @@ pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>) {
         let line_stmt = match parse_tokens_to_statement(tokens) {
             Ok(stmt) => stmt,
             Err(err) => {
-                println!("{}", err.msg());
                 env.faults.push(Box::new(err));
                 continue;
             }
