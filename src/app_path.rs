@@ -15,6 +15,7 @@ pub enum AbsFilePathError {
     ExpectAbsolutePath,
     FaultFileName,
     ExpectRelativePath,
+    FailureGetHomedir
 }
 
 fn is_fault_file_name(file_name: &str) -> bool{
@@ -71,9 +72,23 @@ impl AbsFilePath {
         let mut splited : VecDeque<String> = abs_path.split("/").map(|x| x.to_string()).collect();
 
         let root = splited.pop_front().expect("bug");
-        if root != "" {
+        if root != "" && root != "~" {
             return Err(AbsFilePathError::ExpectAbsolutePath);
         }
+        
+        if root == "~" {
+            let Ok(home_dir) = std::env::var("HOME") else {
+                return Err(AbsFilePathError::FailureGetHomedir);
+            };
+            let mut splited_home : VecDeque<String> = home_dir.split("/").map(|x| x.to_string()).collect();
+            loop {
+                let Some(dir_name) = splited_home.pop_back() else {
+                    break;
+                };
+                splited.push_front(dir_name);
+            }
+        }
+
 
         let file_name = splited.pop_back().expect("bug");
         if is_fault_file_name(&file_name) {
@@ -101,12 +116,19 @@ pub fn join_or_abs(abs: &AbsFilePath, join: &str) -> Result<AbsFilePath,AbsFileP
     let mut tmp_chars = join.chars().peekable();
     let front = tmp_chars.peek();
     
-    if front != Some(&'/') {
+    if front != Some(&'/') && front != Some(&'~') {
         abs.join_relative(join)
     }else{
         AbsFilePath::from_string(join)
     }
 
+}
+
+#[cfg(test)]
+impl AbsFilePath {
+    pub fn create_decoy() -> Self {
+        AbsFilePath { dir: vec!["home".to_string()], file_name: "hello".to_string() }
+    }
 }
 
 #[cfg(test)]

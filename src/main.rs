@@ -7,43 +7,34 @@ mod run;
 mod utils;
 mod app_path;
 
+use app_path::AbsFilePath;
 use clap::Parser;
 use std::{
-    collections::VecDeque, fs::read_to_string, io::{BufReader, Read}, path::PathBuf
+    collections::VecDeque, fs::{self, read_to_string}, path::PathBuf
 };
 use eval::Envroiment;
 use run::run;
 
 #[derive(Parser, Debug)]
 struct Args {
-    file_path: Option<String>    
+    file_path: String   
 }
 
 fn main() {
     let args = Args::parse();
 
     let mut env = Envroiment::new();
-    
-    let file_path = match args.file_path {
-        Some(file_path) => Some(PathBuf::from(&file_path)),
-        None => None
-    };
 
-    let file_string = match file_path {
-        Some(ref path) => { 
-            read_to_string(path).unwrap()
-        },
-        None => {
-            let mut reader = BufReader::new(std::io::stdin());
-            let mut stdin_string = String::new();
-            reader.read_to_string(&mut stdin_string).unwrap();
-            stdin_string
-        }
-    };
+    let file_path = PathBuf::from(&args.file_path);
+    let file_string = read_to_string(&file_path).unwrap();
 
     let file_chars: VecDeque<char> = file_string.chars().collect();
+    let tmp = fs::canonicalize(file_path).unwrap();
+    let abs_path = tmp.to_str().unwrap();
+    
+    let abs_file_path = AbsFilePath::from_string(abs_path).unwrap();
 
-    run(&mut env, file_chars, file_path);
+    run(&mut env, file_chars, abs_file_path);
 
     env.print_vars();
     for err in env.faults {

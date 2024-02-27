@@ -1,9 +1,9 @@
 // use std::fs;
 use std::{collections::HashMap, fs::read_to_string  };
-use std::path::PathBuf;
 
 mod include_file_stack;
 use include_file_stack::IncludeFileStack;
+use crate::app_path::{self, AbsFilePathError};
 use crate::{
     color::Color, fault , parser::{
         ColorExpression, Function, IncludeStatement, LetStatement, MinusFunction, PlusFunction, RgbFunctoin, Statement
@@ -48,7 +48,8 @@ impl Envroiment {
 pub enum RuntimeFault {
     NotFound { target_name: String },
     NoSuchFile { path: String },
-    TodoRename {}
+    TodoRename {},
+    TodoRename2 {err: AbsFilePathError}
 }
 
 impl From<IncludeFileStackFault> for RuntimeFault {
@@ -57,35 +58,47 @@ impl From<IncludeFileStackFault> for RuntimeFault {
     }    
 }
 
+impl From<AbsFilePathError> for RuntimeFault {
+    fn from(value: AbsFilePathError) -> Self {
+       RuntimeFault::TodoRename2 { err: value } 
+    } 
+}
+
 impl fault::Fault for RuntimeFault {
     fn msg(&self) -> String {
         match self {
             RuntimeFault::NotFound { target_name } => format!("RuntimeError: {} is Not Found", target_name) ,
             RuntimeFault::NoSuchFile { path } => format!("RuntimeError: No such file. path:{}", path),
-            RuntimeFault::TodoRename {  } => format!("todo")
+            RuntimeFault::TodoRename {  } => format!("todo"),
+            RuntimeFault::TodoRename2 { err } => format!("RuntimeError: {:?}",err)
         }
     }    
 }
 
 pub fn eval_include_stmt(include_stmt: IncludeStatement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
 
-    let file_path_str = match std::env::var("HOME") {
-        Ok( home_dir ) => include_stmt.path.replace("~", &home_dir),
-        Err(_) => include_stmt.path.clone()
-    };
+    // let file_path_str = match std::env::var("HOME") {
+    //     Ok( home_dir ) => include_stmt.path.replace("~", &home_dir),
+    //     Err(_) => include_stmt.path.clone()
+    // };
 
-    // let file_path = Path::new(&file_path_str);
-    let file_path = PathBuf::from(&file_path_str);
+    // // let file_path = Path::new(&file_path_str);
+    // let file_path = PathBuf::from(&file_path_str);
 
-    let file_string = match read_to_string(file_path.clone()) {
+    
+    // let file_chars = file_string.chars().collect();
+    // let next_path = app_path::join_or_abs(abs, join)
+    
+    let current_file_path = env.include_file_stack.get_current_file();
+    let file_path = app_path::join_or_abs(current_file_path, &include_stmt.path)?;
+    let file_string = match read_to_string(file_path.get()) {
         Ok(str) => str,
         Err(_) => {
             return Err(RuntimeFault::NoSuchFile { path: include_stmt.path });    
         }
     };
     
-    let file_chars = file_string.chars().collect();
-    run(env, file_chars, Some(file_path));
+    run(env, file_string.chars().collect(), file_path);
 
     Ok(()) 
 }
