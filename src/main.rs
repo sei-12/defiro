@@ -5,6 +5,7 @@ mod lexer;
 mod parser;
 mod run;
 mod utils;
+mod app_path;
 
 use clap::Parser;
 use std::{
