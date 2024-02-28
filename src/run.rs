@@ -1,13 +1,13 @@
 use std::collections::VecDeque;
 
 use crate::{
-    app_path::AbsFilePath, eval::{eval, Envroiment, RuntimeFault}, lexer::lexer, parser::parse_tokens_to_statement, utils::peek_take_while
+    app_path::AbsFilePath, envroiment::Envroiment, eval::eval, lexer::lexer, parser::parse_tokens_to_statement, utils::peek_take_while
 };
 
 pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>, file_path: AbsFilePath ) {
     let result = env.include_file_stack.push(file_path); 
     if let Err(err) = result {
-        env.faults.push(Box::new(RuntimeFault::from(err)));
+        env.faults.push(Box::new(err));
         return;
     }
 
@@ -55,7 +55,7 @@ pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>, file_path: AbsF
 #[cfg(test)]
 mod test {
 
-    use crate::{app_path, color::Color, eval::Envroiment, run::run};
+    use crate::{app_path, color::Color, envroiment::Envroiment, run::run};
 
     #[test]
     fn test_run() {

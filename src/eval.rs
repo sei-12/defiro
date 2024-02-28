@@ -1,62 +1,26 @@
 // use std::fs;
-use std::{collections::HashMap, fs::read_to_string  };
+use std::fs::read_to_string;
 
-mod include_file_stack;
-use include_file_stack::IncludeFileStack;
 use crate::app_path::{self, AbsFilePathError};
+use crate::envroiment::Envroiment;
 use crate::{
     color::Color, fault , parser::{
         ColorExpression, Function, IncludeStatement, LetStatement, MinusFunction, PlusFunction, RgbFunctoin, Statement
     }, run::run
 };
 
-use self::include_file_stack::IncludeFileStackFault;
-
-pub struct Envroiment {
-    map: HashMap<String, Color>,
-    pub faults: Vec<Box<dyn fault::Fault>>,
-    pub include_file_stack: IncludeFileStack
-}
-
-impl Envroiment {
-    pub fn set(&mut self, name: String, color: Color) {
-        self.map.insert(name, color);
-    }
-
-    pub fn get(&self, name: &String) -> Option<Color> {
-        match self.map.get(name) {
-            Some(c) => Some(c.clone()),
-            None => None
-        }
-    }
-
-    pub fn new() -> Self {
-        Envroiment {
-            map: HashMap::new(),
-            faults: Vec::new(),
-            include_file_stack: IncludeFileStack::new()
-        }
-    }
-    
-    pub fn print_vars(&self){
-        for var in &self.map {
-            println!("{} {:?}", var.0, var.1)
-        }
-    }
-}
 
 pub enum RuntimeFault {
     NotFound { target_name: String },
     NoSuchFile { path: String },
-    TodoRename {},
     TodoRename2 {err: AbsFilePathError}
 }
 
-impl From<IncludeFileStackFault> for RuntimeFault {
-    fn from(_value: IncludeFileStackFault) -> Self {
-        RuntimeFault::TodoRename {  }
-    }    
-}
+// impl From<IncludeFileStackFaul> for RuntimeFault {
+//     fn from(_value: IncludeFileStackFault) -> Self {
+//         RuntimeFault::TodoRename {  }
+//     }    
+// }
 
 impl From<AbsFilePathError> for RuntimeFault {
     fn from(value: AbsFilePathError) -> Self {
@@ -69,7 +33,6 @@ impl fault::Fault for RuntimeFault {
         match self {
             RuntimeFault::NotFound { target_name } => format!("RuntimeError: {} is Not Found", target_name) ,
             RuntimeFault::NoSuchFile { path } => format!("RuntimeError: No such file. path:{}", path),
-            RuntimeFault::TodoRename {  } => format!("todo"),
             RuntimeFault::TodoRename2 { err } => format!("RuntimeError: {:?}",err)
         }
     }    
@@ -149,3 +112,4 @@ fn eval_rgb_function(rgbf: RgbFunctoin) -> Color {
     let b= rgbf.arg3_b;
     Color::new(r, g, b)
 }
+

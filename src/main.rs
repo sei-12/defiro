@@ -1,5 +1,6 @@
 mod color;
 mod fault;
+mod envroiment;
 mod eval;
 mod lexer;
 mod parser;
@@ -9,10 +10,10 @@ mod app_path;
 
 use app_path::AbsFilePath;
 use clap::Parser;
+use envroiment::Envroiment;
 use std::{
     collections::VecDeque, fs::{self, read_to_string}, path::PathBuf
 };
-use eval::Envroiment;
 use run::run;
 
 #[derive(Parser, Debug)]
@@ -35,9 +36,10 @@ fn main() {
     let abs_file_path = AbsFilePath::from_string(abs_path).unwrap();
 
     run(&mut env, file_chars, abs_file_path);
-        
 
-    env.print_vars();
+
+    println!("{}",env.vars_json());
+
     for err in env.faults {
         eprintln!("{}",err.msg());
     }

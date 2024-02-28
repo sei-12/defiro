@@ -1,8 +1,14 @@
-use crate::app_path::AbsFilePath;
+use crate::{app_path::AbsFilePath, fault};
 
 #[derive(Debug)]
 pub struct IncludeFileStackFault {
     
+}
+
+impl fault::Fault for IncludeFileStackFault {
+    fn msg(&self) -> String {
+        format!("")
+    } 
 }
 
 pub struct IncludeFileStack {
