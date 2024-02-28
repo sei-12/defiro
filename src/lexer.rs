@@ -328,18 +328,6 @@ mod test {
                 Token::Identifier("-1".to_string()),
             ]
         );
-        // let mut test = "4294967296 4294967295 0 -1".chars().collect();
-        // let parsed = Vec::from(lexer(&mut test).unwrap());
-        // assert_eq!(
-        //     parsed,
-        //     vec![
-        //         Token::Identifier("4294967296".to_string()),
-        //         Token::Int(4294967295),
-        //         Token::Int(0),
-        //         Token::Identifier("-1".to_string()),
-        //     ]
-        // );
-
 
         let mut test = "a(1,3,4,hello,  aaa,a-b, \n aaa\na,s)".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());

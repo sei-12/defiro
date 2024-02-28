@@ -172,37 +172,6 @@ mod test {
             Some(Color ::new( 0,  0,  0 ))
         );
 
-        // // あまりきれいなテスト方法ではない
-        // // 許して
-        // let code = "\
-        // include ./test/test3.txt
-        // ";
-        // let mut env = Envroiment::new();
-        // run(&mut env, code.chars().collect());
-        // assert_eq!(
-        //     env.get(&"hello".to_string()),
-        //     Some(Color {
-        //         r: 10,
-        //         g: 20,
-        //         b: 30
-        //     })
-        // );
-        
-        // let code = "\
-        // include ./test/test3.txt;
-        // hello2 = plus(hello,10,1,2);
-        // ";
-        // let mut env = Envroiment::new();
-        // run(&mut env, code.chars().collect());
-        // assert_eq!(
-        //     env.get(&"hello".to_string()),
-        //     Some(Color { r: 10, g: 20, b: 30 })
-        // );
-        // assert_eq!(
-        //     env.get(&"hello2".to_string()),
-        //     Some(Color { r: 20, g: 21, b: 32 })
-        // );
-        
         let code = "\
         hello2 = hello
         ";
@@ -210,20 +179,6 @@ mod test {
         run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
         assert_eq!(env.faults[0].msg(),"RuntimeError: hello is Not Found".to_string());
         
-        // let code = "\
-        // include ./no_such
-        // ";
-        // let mut env = Envroiment::new();
-        // run(&mut env, code.chars().collect());
-        // assert_eq!(env.faults[0].msg(),"RuntimeError: No such file. path:./no_such".to_string());
-        
-        // let code = "\
-        // include ./test/test4.txt;
-        // ";
-        // let mut env = Envroiment::new();
-        // run(&mut env, code.chars().collect());
-        // assert_eq!(env.faults[0].msg(),"RuntimeError: foo is Not Found".to_string());
-
         let code = "\
         hello = #fffff;
         ";
