@@ -67,19 +67,11 @@ mod test {
         run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
         assert_eq!(
             env.get(&"hello".to_string()),
-            Some(Color {
-                r: 255,
-                g: 255,
-                b: 255
-            })
+            Some(Color::new(255, 255, 255))
         );
         assert_eq!(
             env.get(&"color2".to_string()),
-            Some(Color {
-                r: 20,
-                g: 30,
-                b: 40
-            })
+            Some(Color::new(20, 30, 40))
         );
 
         let code = "\
@@ -123,61 +115,62 @@ mod test {
         run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
         assert_eq!(
             env.get(&"hello".to_string()),
-            Some(Color {
-                r: 255,
-                g: 255,
-                b: 255
-            })
+            Some(Color ::new( 255,  255,  255 ))
         );
         assert_eq!(
             env.get(&"color2".to_string()),
-            Some(Color {
-                r: 16,
-                g: 16,
-                b: 16
-            })
+            Some(Color ::new( 16,  16,  16 ))
         );
         assert_eq!(
             env.get(&"color3".to_string()),
-            Some(Color {
-                r: 26,
-                g: 36,
-                b: 46
-            })
+            Some(Color ::new( 26,  36,  46 ))
         );
         assert_eq!(
             env.get(&"color4".to_string()),
-            Some(Color {
-                r: 26,
-                g: 36,
-                b: 46
-            })
+            Some(Color ::new( 26,  36,  46 ))
         );
         assert_eq!(
             env.get(&"color5".to_string()),
-            Some(Color {
-                r: 10,
-                g: 10,
-                b: 10
-            })
+            Some(Color ::new( 10,  10,  10 ))
         );
         assert_eq!(
             env.get(&"color6".to_string()),
-            Some(Color {
-                r: 11,
-                g: 10,
-                b: 10
-            })
+            Some(Color ::new( 11,  10,  10 ))
         );
         assert_eq!(
             env.get(&"color7".to_string()),
-            Some(Color {
-                r: 10,
-                g: 10,
-                b: 10
-            })
+            Some(Color ::new( 10,  10,  10 ))
         );
 
+        let code = "\
+        hello = rgb(255,150,0);
+        hello2 = plus(hello,1,200,100);
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
+        assert_eq!(
+            env.get(&"hello".to_string()),
+            Some(Color ::new( 255,  150,  0 ))
+        );
+        assert_eq!(
+            env.get(&"hello2".to_string()),
+            Some(Color ::new( 255,  255,  100 ))
+        );
+
+        let code = "\
+        hello = rgb(0,0,0);
+        hello2 = minus(hello,1,1,1);
+        ";
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
+        assert_eq!(
+            env.get(&"hello".to_string()),
+            Some(Color ::new( 0,  0,  0 ))
+        );
+        assert_eq!(
+            env.get(&"hello2".to_string()),
+            Some(Color ::new( 0,  0,  0 ))
+        );
 
         // // あまりきれいなテスト方法ではない
         // // 許して
@@ -259,14 +252,7 @@ mod test {
         run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
         assert_eq!(env.faults[0].msg(),"ParseError: Syntax".to_string());
 
-        // TODO
-        // let code = "\
-        // hello = rgb(0,0,0);
-        // hello2 = minus(hello,1,1,1);
-        // ";
-        // let mut env = Envroiment::new();
-        // run(&mut env, code.chars().collect(),app_path::AbsFilePath::create_decoy());
-        // assert_eq!(env.faults[0].msg(),"ParseError: Syntax".to_string());
+
         
     }
 }

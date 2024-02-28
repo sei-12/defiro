@@ -144,28 +144,21 @@ fn eval_minus_function(
     minus_f: MinusFunction,
     env: &mut Envroiment,
 ) -> Result<Color, RuntimeFault> {
-    let mut color = eval_expression(*minus_f.arg_expression, env)?;
-    color.r -= minus_f.arg_r;
-    color.g -= minus_f.arg_g;
-    color.b -= minus_f.arg_b;
-    Ok(color)
+    let color = eval_expression(*minus_f.arg_expression, env)?;
+    Ok(color.minus(minus_f.arg_r,minus_f.arg_g,minus_f.arg_b))
 }
 
 fn eval_plus_function(
     plus_f: PlusFunction,
     env: &mut Envroiment,
 ) -> Result<Color, RuntimeFault> {
-    let mut color = eval_expression(*plus_f.arg_expression, env)?;
-    color.r += plus_f.arg_r;
-    color.g += plus_f.arg_g;
-    color.b += plus_f.arg_b;
-    Ok(color)
+    let color = eval_expression(*plus_f.arg_expression, env)?;
+    Ok(color.plus(plus_f.arg_r,plus_f.arg_g,plus_f.arg_b))
 }
 
 fn eval_rgb_function(rgbf: RgbFunctoin) -> Color {
-    Color {
-        r: rgbf.arg1_r,
-        g: rgbf.arg2_g,
-        b: rgbf.arg3_b,
-    }
+    let r= rgbf.arg1_r;
+    let g= rgbf.arg2_g;
+    let b= rgbf.arg3_b;
+    Color::new(r, g, b)
 }

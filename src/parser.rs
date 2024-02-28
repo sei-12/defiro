@@ -1,26 +1,26 @@
 use crate::{
-    color::Color, fault, lexer::{Token, TokenInt}
+    color::{self, Color}, fault, lexer::Token
 };
 use std::collections::VecDeque;
 
 pub struct RgbFunctoin {
-    pub arg1_r: TokenInt,
-    pub arg2_g: TokenInt,
-    pub arg3_b: TokenInt,
+    pub arg1_r: color::ColorInt,
+    pub arg2_g: color::ColorInt,
+    pub arg3_b: color::ColorInt,
 }
 
 pub struct PlusFunction {
     pub arg_expression: Box<ColorExpression>,
-    pub arg_r: TokenInt,
-    pub arg_g: TokenInt,
-    pub arg_b: TokenInt,
+    pub arg_r: color::ColorInt,
+    pub arg_g: color::ColorInt,
+    pub arg_b: color::ColorInt,
 }
 
 pub struct MinusFunction {
     pub arg_expression: Box<ColorExpression>,
-    pub arg_r: TokenInt,
-    pub arg_g: TokenInt,
-    pub arg_b: TokenInt,
+    pub arg_r: color::ColorInt,
+    pub arg_g: color::ColorInt,
+    pub arg_b: color::ColorInt,
 }
 
 pub enum Function {
@@ -124,7 +124,7 @@ fn parse_minus_function(tokens: &mut VecDeque<Token>) -> Result<ColorExpression,
 
 fn parse_minus_and_plus(
     tokens: &mut VecDeque<Token>,
-) -> Result<(ColorExpression, TokenInt, TokenInt, TokenInt), ParseFault> {
+) -> Result<(ColorExpression, color::ColorInt, color::ColorInt, color::ColorInt), ParseFault> {
     check_next_token(tokens, Token::LeftPare)?;
     let exp = parse_expression(tokens)?;
 
@@ -306,11 +306,7 @@ mod test {
                     ColorExpression::Raw(color) => {
                         assert_eq!(
                             color,
-                            Color {
-                                r: 10,
-                                g: 10,
-                                b: 10
-                            }
+                            Color ::new( 10,  10,  10 )
                         )
                     }
                     _ => panic!(),
@@ -366,11 +362,7 @@ mod test {
                     ColorExpression::Raw(color) => {
                         assert_eq!(
                             color,
-                            Color {
-                                r: 10,
-                                g: 10,
-                                b: 10
-                            }
+                            Color ::new( 10,  10,  10 )
                         )
                     }
                     _ => panic!(),

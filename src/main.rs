@@ -35,6 +35,7 @@ fn main() {
     let abs_file_path = AbsFilePath::from_string(abs_path).unwrap();
 
     run(&mut env, file_chars, abs_file_path);
+        
 
     env.print_vars();
     for err in env.faults {

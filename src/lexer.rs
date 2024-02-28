@@ -1,7 +1,5 @@
 use std::collections::VecDeque;
-use crate::{color::Color, fault, utils::peek_take_while};
-
-pub type TokenInt = u32;
+use crate::{color::{self, Color}, fault, utils::peek_take_while};
 
 fn pops_front<T>(iter: &mut VecDeque<T>, length: usize) -> Vec<T> {
     let mut ret_vec = Vec::with_capacity(length);
@@ -119,7 +117,7 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
             continue;
         }
         
-        if let Ok(int) = word.parse::<TokenInt>() {
+        if let Ok(int) = word.parse::<color::ColorInt>() {
             tokens.push_back(Token::Int(int));
             continue;
         }
@@ -139,7 +137,7 @@ pub enum Token {
     Include,
     HexColor(Color),
     Identifier(String), // 標準搭載された関数も含める
-    Int(TokenInt),
+    Int(color::ColorInt),
     Assign,
     LeftPare,
     RightPare,
@@ -174,11 +172,7 @@ mod test {
                 Token::Let,
                 Token::Identifier("hello".to_string()),
                 Token::Assign,
-                Token::HexColor(Color {
-                    r: 255,
-                    g: 255,
-                    b: 255
-                })
+                Token::HexColor(Color::new(255, 255, 255))
             ]
         );
 
@@ -190,11 +184,7 @@ mod test {
                 Token::Let,
                 Token::Identifier("hello".to_string()),
                 Token::Assign,
-                Token::HexColor(Color {
-                    r: 255,
-                    g: 255,
-                    b: 255
-                })
+                Token::HexColor(Color::new(255, 255, 255))
             ]
         );
 
@@ -228,7 +218,7 @@ mod test {
             parsed,
             vec![
                 Token::Identifier("hello".to_string()),
-                Token::HexColor(Color { r: 16, g: 16, b: 16 }),
+                Token::HexColor(Color::new(16, 16, 16)),
                 Token::Identifier("aaa".to_string()),
                 Token::Assign,
                 Token::Identifier("aaa".to_string()),
@@ -327,17 +317,28 @@ mod test {
             ]
         );
 
-        let mut test = "4294967296 4294967295 0 -1".chars().collect();
+        let mut test = "255 256 0 -1".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
         assert_eq!(
             parsed,
             vec![
-                Token::Identifier("4294967296".to_string()),
-                Token::Int(4294967295),
+                Token::Int(255),
+                Token::Identifier("256".to_string()),
                 Token::Int(0),
                 Token::Identifier("-1".to_string()),
             ]
         );
+        // let mut test = "4294967296 4294967295 0 -1".chars().collect();
+        // let parsed = Vec::from(lexer(&mut test).unwrap());
+        // assert_eq!(
+        //     parsed,
+        //     vec![
+        //         Token::Identifier("4294967296".to_string()),
+        //         Token::Int(4294967295),
+        //         Token::Int(0),
+        //         Token::Identifier("-1".to_string()),
+        //     ]
+        // );
 
 
         let mut test = "a(1,3,4,hello,  aaa,a-b, \n aaa\na,s)".chars().collect();
