@@ -84,6 +84,9 @@ impl AbsFilePath {
                 let Some(dir_name) = splited_home.pop_back() else {
                     break;
                 };
+                if dir_name == "" {
+                    continue;
+                }
                 splited.push_front(dir_name);
             }
         }
@@ -132,6 +135,8 @@ impl AbsFilePath {
 
 #[cfg(test)]
 mod test {
+    use std::env;
+
     use super::{AbsFilePath, AbsFilePathError};
 
     #[test]
@@ -245,6 +250,79 @@ mod test {
         );
     }
     
+    #[test]
+    fn from_string(){
+        test_from_string(
+            "/home/hello",
+            "/home/hello"
+        );
+        test_from_string(
+            "~/home/hello",
+            &"~/home/hello".replace("~", env::var("HOME").unwrap().as_str())
+        );
+    }
+    #[test]
+    fn from_string_err(){
+        test_from_string_err(
+            "/", 
+            AbsFilePathError::FaultFileName
+        );
+
+        test_from_string_err(
+            "/.", 
+            AbsFilePathError::FaultFileName
+        );
+
+        test_from_string_err(
+            "/..", 
+            AbsFilePathError::FaultFileName
+        );
+
+        test_from_string_err(
+            "/hello/", 
+            AbsFilePathError::FaultFileName
+        );
+
+        test_from_string_err(
+            "/hello/.", 
+            AbsFilePathError::FaultFileName
+        );
+        test_from_string_err(
+            "/hello/..", 
+            AbsFilePathError::FaultFileName
+        );
+
+        test_from_string_err(
+            "hello", 
+            AbsFilePathError::ExpectAbsolutePath
+        );
+
+        test_from_string_err(
+            "./hello", 
+            AbsFilePathError::ExpectAbsolutePath
+        );
+        test_from_string_err(
+            "aaa/hello", 
+            AbsFilePathError::ExpectAbsolutePath
+        );
+    }
+
+    fn test_from_string_err(
+        from: &str,
+        err: AbsFilePathError
+    ){
+        let a = AbsFilePath::from_string(from).unwrap_err();
+        assert_eq!(a,err);
+    }
+
+    fn test_from_string(
+        from: &str,
+        get_: &str
+    ){
+        let a = AbsFilePath::from_string(from).unwrap();
+        assert_eq!(a.get(),get_);
+    } 
+
     fn test_join_relative_err(
         from: &str,
         join: &str,

@@ -2,12 +2,12 @@ use crate::{app_path::AbsFilePath, fault};
 
 #[derive(Debug)]
 pub struct IncludeFileStackFault {
-    
+    path: String 
 }
 
 impl fault::Fault for IncludeFileStackFault {
     fn msg(&self) -> String {
-        format!("")
+        format!("IncludeError: Recursive inclusion detected. : {}",self.path)
     } 
 }
 
@@ -28,7 +28,7 @@ impl IncludeFileStack {
         let exist = self.included_files.iter().find(|&path| path == &abs_path).is_some();       
 
         if exist {
-            Err(IncludeFileStackFault{})
+            Err(IncludeFileStackFault{ path: abs_path.get() })
         }else{
             self.included_files.push(abs_path);
             Ok(())            
