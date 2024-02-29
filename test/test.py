@@ -41,9 +41,7 @@ for test_dir in test_dirs:
         all_ok = False
     test_name = test_dir.split("/").pop()
 
-    print()
-    print(f"----- {test_name} -----")
-    print(f"result: {result} time: {run_time_ms}ms")
+    print(f"{test_name.ljust(15,' ')} {str(run_time_ms).rjust(4,' ')}ms ... {result}")
 
 
 if all_ok:
