@@ -16,7 +16,7 @@ pub enum RuntimeFault {
     NotFound { target_name: String },
     NoSuchFile { path: String },
     TodoRename2 { err: AbsFilePathError },
-    IsNotFunction { target_name: String }
+    IsNotFunction { target_name: String },
 }
 
 enum Value {
@@ -40,7 +40,9 @@ impl fault::Fault for RuntimeFault {
                 format!("RuntimeError: No such file. path:{}", path)
             }
             RuntimeFault::TodoRename2 { err } => format!("RuntimeError: {:?}", err),
-            RuntimeFault::IsNotFunction { target_name } => format!("RuntimeError: {} is not function",target_name)
+            RuntimeFault::IsNotFunction { target_name } => {
+                format!("RuntimeError: {} is not function", target_name)
+            }
         }
     }
 }
@@ -87,16 +89,17 @@ fn eval_identifer(name: String, env: &mut Envroiment) -> Result<Value, RuntimeFa
     }
 }
 
-fn eval_call(call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault>{
-
+fn eval_call(call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
     if call.name == "plus" {
         eval_plus_function(call, env)
-    }else if call.name == "minus" {
+    } else if call.name == "minus" {
         eval_minus_function(call, env)
-    }else if call.name == "rgb" {
+    } else if call.name == "rgb" {
         eval_rgb_function(call)
-    }else{
-        Err(RuntimeFault::IsNotFunction { target_name: call.name })
+    } else {
+        Err(RuntimeFault::IsNotFunction {
+            target_name: call.name,
+        })
     }
 }
 
@@ -105,16 +108,13 @@ fn eval_expression(exp: Expression, env: &mut Envroiment) -> Result<Value, Runti
         Expression::Color(color) => Value::Color(color),
         Expression::Identifier(name) => eval_identifer(name, env)?,
         Expression::Call(call) => eval_call(call, env)?,
-        Expression::Int(int) => Value::Int(int)
+        Expression::Int(int) => Value::Int(int),
     };
 
     Ok(value)
 }
 
-fn eval_plus_function(
-    mut call: Call,
-    env: &mut Envroiment,
-) -> Result<Value, RuntimeFault> {
+fn eval_plus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
     if call.args.len() != 4 {
         // runtime error
         todo!()
@@ -132,18 +132,14 @@ fn eval_plus_function(
         todo!()
     };
 
-    let value = eval_expression( call.args.pop().expect("bug"), env)?;
+    let value = eval_expression(call.args.pop().expect("bug"), env)?;
 
-    let Value::Color(color) = value else {
-        todo!()
-    };
+    let Value::Color(color) = value else { todo!() };
 
-    Ok(Value::Color(color.plus(r,g,b)))
+    Ok(Value::Color(color.plus(r, g, b)))
 }
 
-fn eval_rgb_function(
-    call: Call,
-) -> Result<Value, RuntimeFault> {
+fn eval_rgb_function(call: Call) -> Result<Value, RuntimeFault> {
     if call.args.len() != 3 {
         // runtime error
         todo!()
@@ -161,10 +157,7 @@ fn eval_rgb_function(
     Ok(Value::Color(Color::new(r, g, b)))
 }
 
-fn eval_minus_function(
-    mut call: Call,
-    env: &mut Envroiment,
-) -> Result<Value, RuntimeFault> {
+fn eval_minus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
     if call.args.len() != 4 {
         // runtime error
         todo!()
@@ -182,11 +175,9 @@ fn eval_minus_function(
         todo!()
     };
 
-    let value = eval_expression( call.args.pop().expect("bug"), env)?;
+    let value = eval_expression(call.args.pop().expect("bug"), env)?;
 
-    let Value::Color(color) = value else {
-        todo!()
-    };
+    let Value::Color(color) = value else { todo!() };
 
-    Ok(Value::Color(color.minus(r,g,b)))
+    Ok(Value::Color(color.minus(r, g, b)))
 }

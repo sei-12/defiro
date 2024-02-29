@@ -1,5 +1,9 @@
+use crate::{
+    color::{self, Color},
+    fault,
+    utils::peek_take_while,
+};
 use std::collections::VecDeque;
-use crate::{color::{self, Color}, fault, utils::peek_take_while};
 
 fn pops_front<T>(iter: &mut VecDeque<T>, length: usize) -> Vec<T> {
     let mut ret_vec = Vec::with_capacity(length);
@@ -55,42 +59,42 @@ impl fault::Fault for LexFault {
             LexFault::Value => {
                 format!("LexError: value error")
             }
-        } 
+        }
     }
 }
 
 // TODO refactor
-fn remove_comment_line(chars: &mut VecDeque<char>) -> VecDeque<char>{
+fn remove_comment_line(chars: &mut VecDeque<char>) -> VecDeque<char> {
     let mut ret_chars = VecDeque::new();
-    
+
     let mut old_char = match chars.pop_front() {
         Some(c) => c,
         None => {
             return ret_chars;
-        }        
+        }
     };
-    
+
     loop {
         let Some(current) = chars.pop_front() else {
             ret_chars.push_back(old_char);
             break;
         };
-        
+
         if old_char == '/' && current == '/' {
             peek_take_while(chars, |&ch| ch == '\n');
-            
+
             match chars.pop_front() {
-                Some(c) => { old_char = c },
+                Some(c) => old_char = c,
                 None => {
                     break;
                 }
             }
-        }else{
+        } else {
             ret_chars.push_back(old_char);
             old_char = current;
         }
     }
-    
+
     ret_chars
 }
 
@@ -136,29 +140,26 @@ pub fn lexer(chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault> {
             tokens.push_back(Token::HexColor(color));
             continue;
         }
-        
-        
-        let word_vec = peek_take_while(&mut chars, |&ch| {
-            is_skip_char(ch) || is_token_char(ch)
-        });
-        
-        let word: String = format!("{}{}",ch,word_vec.into_iter().collect::<String>());
-        
+
+        let word_vec = peek_take_while(&mut chars, |&ch| is_skip_char(ch) || is_token_char(ch));
+
+        let word: String = format!("{}{}", ch, word_vec.into_iter().collect::<String>());
+
         if word == "let" {
             tokens.push_back(Token::Let);
-            continue; 
+            continue;
         }
-        
-        if word == "include"{
+
+        if word == "include" {
             tokens.push_back(Token::Include);
             continue;
         }
-        
+
         if let Ok(int) = word.parse::<color::ColorInt>() {
             tokens.push_back(Token::Int(int));
             continue;
         }
-        
+
         tokens.push_back(Token::Identifier(word))
     }
 
@@ -181,23 +182,20 @@ pub enum Token {
     Comma,
 }
 
-
-
 #[cfg(test)]
 mod test {
-    use crate::{color::Color, lexer::{lexer, Token}};
-    fn test_lexer(
-        line: &str,
-        assert: Vec<Token>
-    ){
+    use crate::{
+        color::Color,
+        lexer::{lexer, Token},
+    };
+    fn test_lexer(line: &str, assert: Vec<Token>) {
         let mut test = line.chars().collect();
-        let parsed =  Vec::from(lexer(&mut test).unwrap());
-        assert_eq!(parsed,assert);
+        let parsed = Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(parsed, assert);
     }
 
     #[test]
     fn _parse_line() {
-
         test_lexer(
             "hello\n//hello\nfoo // hello \nlet hello",
             vec![
@@ -205,7 +203,7 @@ mod test {
                 Token::Identifier("foo".to_string()),
                 Token::Let,
                 Token::Identifier("hello".to_string()),
-            ]
+            ],
         );
 
         test_lexer(
@@ -213,38 +211,22 @@ mod test {
             vec![
                 Token::Identifier("hello".to_string()),
                 Token::Identifier("foo".to_string()),
-            ]
+            ],
         );
 
-        test_lexer(
-            "hello/",
-            vec![
-                Token::Identifier("hello/".to_string())
-            ]
-        );
-        
-        test_lexer(
-            "hello//",
-            vec![
-                Token::Identifier("hello".to_string())
-            ]
-        );
+        test_lexer("hello/", vec![Token::Identifier("hello/".to_string())]);
 
-        test_lexer(
-            "// hello",
-            vec![]
-        );
-    
+        test_lexer("hello//", vec![Token::Identifier("hello".to_string())]);
+
+        test_lexer("// hello", vec![]);
+
         test_lexer(
             "\
             // hello
             let hello
             // hello
             ",
-            vec![
-                Token::Let,
-                Token::Identifier("hello".to_string())
-            ]
+            vec![Token::Let, Token::Identifier("hello".to_string())],
         );
 
         test_lexer(
@@ -255,7 +237,7 @@ mod test {
                 Token::Include,
                 Token::Identifier("/".to_string()),
                 Token::Identifier("/".to_string()),
-            ]
+            ],
         );
 
         let mut test = "()=,".chars().collect();
@@ -350,18 +332,33 @@ mod test {
         let mut test = "aaaa#aa".chars().collect();
         let parsed = lexer(&mut test);
         assert!(parsed.is_err());
-        
 
         let mut test = "((((()))))aaa((((()))))".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
         assert_eq!(
             parsed,
             vec![
-                Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare,
-                Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, 
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::RightPare,
+                Token::RightPare,
+                Token::RightPare,
+                Token::RightPare,
+                Token::RightPare,
                 Token::Identifier("aaa".to_string()),
-                Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare, Token::LeftPare,
-                Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, Token::RightPare, 
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::LeftPare,
+                Token::RightPare,
+                Token::RightPare,
+                Token::RightPare,
+                Token::RightPare,
+                Token::RightPare,
             ]
         );
         let mut test = "let aaa = hello(aaa)".chars().collect();
@@ -375,7 +372,7 @@ mod test {
                 Token::Identifier("hello".to_string()),
                 Token::LeftPare,
                 Token::Identifier("aaa".to_string()),
-                Token::RightPare, 
+                Token::RightPare,
             ]
         );
 
@@ -386,13 +383,13 @@ mod test {
             vec![
                 Token::Let,
                 Token::LeftPare,
-                Token::RightPare, 
+                Token::RightPare,
                 Token::Identifier("aaa".to_string()),
                 Token::LeftPare,
-                Token::RightPare, 
+                Token::RightPare,
                 Token::LeftPare,
                 Token::Identifier("aaa".to_string()),
-                Token::RightPare, 
+                Token::RightPare,
             ]
         );
         let mut test = "let()aaa()(aaa)".chars().collect();
@@ -402,16 +399,15 @@ mod test {
             vec![
                 Token::Let,
                 Token::LeftPare,
-                Token::RightPare, 
+                Token::RightPare,
                 Token::Identifier("aaa".to_string()),
                 Token::LeftPare,
-                Token::RightPare, 
+                Token::RightPare,
                 Token::LeftPare,
                 Token::Identifier("aaa".to_string()),
-                Token::RightPare, 
+                Token::RightPare,
             ]
         );
-        
 
         let mut test = "a-b 100-10".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
@@ -469,11 +465,11 @@ mod test {
             vec![
                 Token::Let,
                 Token::Identifier("a10".to_string()),
-                Token::Assign, 
+                Token::Assign,
                 Token::Identifier("rgb".to_string()),
                 Token::LeftPare,
                 Token::Int(10),
-                Token::RightPare, 
+                Token::RightPare,
                 Token::Int(100),
                 Token::Identifier("a0".to_string()),
                 Token::Identifier("0xa0".to_string()),

@@ -36,7 +36,7 @@ pub enum Statement {
     Include(IncludeStatement),
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum ParseFault {
     Syntax,
 }
@@ -65,13 +65,16 @@ fn peek_token_is(tokens: &mut VecDeque<Token>, assert: Token) -> bool {
         return false;
     };
 
-    tkn == &assert 
+    tkn == &assert
 }
 
 fn parse_function(name: String, tokens: &mut VecDeque<Token>) -> Result<Call, ParseFault> {
     check_next_token(tokens, Token::LeftPare)?;
     if peek_token_is(tokens, Token::RightPare) {
-        return Ok(Call { name, args: Vec::new() });
+        return Ok(Call {
+            name,
+            args: Vec::new(),
+        });
     };
 
     let mut args = Vec::new();
@@ -80,14 +83,13 @@ fn parse_function(name: String, tokens: &mut VecDeque<Token>) -> Result<Call, Pa
 
     while !peek_token_is(tokens, Token::RightPare) {
         check_next_token(tokens, Token::Comma)?;
-        args.push(parse_expression(tokens)?);    
+        args.push(parse_expression(tokens)?);
     }
-    
+
     check_next_token(tokens, Token::RightPare)?;
-    
+
     Ok(Call { name, args })
 }
-
 
 fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<Expression, ParseFault> {
     let Some(front_token) = tokens.pop_front() else {
@@ -102,7 +104,7 @@ fn parse_expression(tokens: &mut VecDeque<Token>) -> Result<Expression, ParseFau
             } else {
                 Ok(Expression::Identifier(name))
             }
-        },
+        }
         Token::Int(int) => Ok(Expression::Int(int)),
         _ => Err(ParseFault::Syntax),
     }?;
@@ -267,10 +269,10 @@ mod test {
                         Expression::Call(Call {
                             name: "rgb".to_string(),
                             args: vec![
-                            Expression::Int(10),
-                            Expression::Int(10),
-                            Expression::Int(10),
-                            ]
+                                Expression::Int(10),
+                                Expression::Int(10),
+                                Expression::Int(10),
+                            ],
                         }),
                         Expression::Int(10),
                         Expression::Int(20),
@@ -291,10 +293,10 @@ mod test {
                         Expression::Call(Call {
                             name: "rgb".to_string(),
                             args: vec![
-                            Expression::Int(10),
-                            Expression::Int(10),
-                            Expression::Int(10),
-                            ]
+                                Expression::Int(10),
+                                Expression::Int(10),
+                                Expression::Int(10),
+                            ],
                         }),
                         Expression::Int(10),
                         Expression::Int(20),
@@ -303,59 +305,25 @@ mod test {
                 }),
             }),
         );
-
     }
-    
+
     #[test]
-    fn parse_tokens_to_statement_err(){
-        test_parse_statement_err(
-            "1", 
-            "hello",
-            ParseFault::Syntax
-        );
-        test_parse_statement_err(
-            "2", 
-            "let hello hello = hello",
-            ParseFault::Syntax
-        );
-        test_parse_statement_err(
-            "3", 
-            "let hello = hello( 10 ",
-            ParseFault::Syntax
-        );
-        test_parse_statement_err(
-            "4", 
-            "let hello = hello( 10 ",
-            ParseFault::Syntax
-        );
-        test_parse_statement_err(
-            "5", 
-            " = cargo ",
-            ParseFault::Syntax
-        );
-        test_parse_statement_err(
-            "6", 
-            "include 1",
-            ParseFault::Syntax
-        );
-        test_parse_statement_err(
-            "7", 
-            "include hello hello",
-            ParseFault::Syntax
-        );
+    fn parse_tokens_to_statement_err() {
+        test_parse_statement_err("1", "hello", ParseFault::Syntax);
+        test_parse_statement_err("2", "let hello hello = hello", ParseFault::Syntax);
+        test_parse_statement_err("3", "let hello = hello( 10 ", ParseFault::Syntax);
+        test_parse_statement_err("4", "let hello = hello( 10 ", ParseFault::Syntax);
+        test_parse_statement_err("5", " = cargo ", ParseFault::Syntax);
+        test_parse_statement_err("6", "include 1", ParseFault::Syntax);
+        test_parse_statement_err("7", "include hello hello", ParseFault::Syntax);
     }
 
-    
-    fn test_parse_statement_err(
-        test_name: &str,
-        stmt_str: &str,
-        assert: ParseFault
-    ){
-        println!("test {}",test_name);
+    fn test_parse_statement_err(test_name: &str, stmt_str: &str, assert: ParseFault) {
+        println!("test {}", test_name);
         let mut chars = stmt_str.chars().collect();
         let tokens = lexer(&mut chars).unwrap();
         let parsed = parse_tokens_to_statement(tokens).unwrap_err();
-        assert_eq!(parsed,assert);
+        assert_eq!(parsed, assert);
     }
 
     fn assert_function(test_name: &str, a: Call, b: Call) {
@@ -399,7 +367,7 @@ mod test {
     }
 
     fn test_parse_statement(test_name: &str, stmt_str: &str, assert_stmt: Statement) {
-        println!("test {}",test_name);
+        println!("test {}", test_name);
         let mut chars = stmt_str.chars().collect();
         let tokens = lexer(&mut chars).unwrap();
         let parsed = parse_tokens_to_statement(tokens).unwrap();

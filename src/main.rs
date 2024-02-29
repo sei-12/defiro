@@ -1,24 +1,26 @@
+mod app_path;
 mod color;
-mod fault;
 mod envroiment;
 mod eval;
+mod fault;
 mod lexer;
 mod parser;
 mod run;
 mod utils;
-mod app_path;
 
 use app_path::AbsFilePath;
 use clap::Parser;
 use envroiment::Envroiment;
-use std::{
-    collections::VecDeque, fs::{self, read_to_string}, path::PathBuf
-};
 use run::run;
+use std::{
+    collections::VecDeque,
+    fs::{self, read_to_string},
+    path::PathBuf,
+};
 
 #[derive(Parser, Debug)]
 struct Args {
-    file_path: String   
+    file_path: String,
 }
 
 fn main() {
@@ -32,15 +34,14 @@ fn main() {
     let file_chars: VecDeque<char> = file_string.chars().collect();
     let tmp = fs::canonicalize(file_path).unwrap();
     let abs_path = tmp.to_str().unwrap();
-    
+
     let abs_file_path = AbsFilePath::from_string(abs_path).unwrap();
 
     run(&mut env, file_chars, abs_file_path);
 
-
-    println!("{}",env.vars_json());
+    println!("{}", env.vars_json());
 
     for err in env.faults {
-        eprintln!("{}",err.msg());
+        eprintln!("{}", err.msg());
     }
 }

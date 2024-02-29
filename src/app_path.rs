@@ -3,21 +3,21 @@
 
 use std::collections::VecDeque;
 
-#[derive(PartialEq,Debug)]
+#[derive(PartialEq, Debug)]
 pub struct AbsFilePath {
     dir: Vec<String>,
-    file_name: String
+    file_name: String,
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum AbsFilePathError {
     ExpectAbsolutePath,
     FaultFileName,
     ExpectRelativePath,
-    FailureGetHomedir
+    FailureGetHomedir,
 }
 
-fn is_fault_file_name(file_name: &str) -> bool{
+fn is_fault_file_name(file_name: &str) -> bool {
     if file_name == "." {
         return true;
     };
@@ -27,13 +27,13 @@ fn is_fault_file_name(file_name: &str) -> bool{
     if file_name == "" {
         return true;
     };
-    
+
     false
 }
 
 impl AbsFilePath {
-    pub fn join_relative(&self, relative: &str) -> Result<Self,AbsFilePathError> {
-        let mut splited : Vec<&str> = relative.split("/").collect();
+    pub fn join_relative(&self, relative: &str) -> Result<Self, AbsFilePathError> {
+        let mut splited: Vec<&str> = relative.split("/").collect();
 
         let front = splited.get(0).expect("bug");
         if front == &"" {
@@ -42,11 +42,11 @@ impl AbsFilePath {
 
         let file_name = splited.pop().expect("bug");
         if is_fault_file_name(file_name) {
-           return Err(AbsFilePathError::FaultFileName); 
+            return Err(AbsFilePathError::FaultFileName);
         }
 
         let mut dirs_clone = self.dir.clone();
-        
+
         for dir_name in splited {
             if dir_name == ".." {
                 dirs_clone.pop();
@@ -56,30 +56,34 @@ impl AbsFilePath {
             if dir_name == "." {
                 continue;
             }
-            
+
             if dir_name == "" {
                 continue;
             }
-            
+
             dirs_clone.push(dir_name.to_string())
         }
 
-        Ok(AbsFilePath { dir: dirs_clone, file_name: file_name.to_string() })
+        Ok(AbsFilePath {
+            dir: dirs_clone,
+            file_name: file_name.to_string(),
+        })
     }
 
-    pub fn from_string(abs_path: &str) -> Result<Self,AbsFilePathError> {
-        let mut splited : VecDeque<String> = abs_path.split("/").map(|x| x.to_string()).collect();
+    pub fn from_string(abs_path: &str) -> Result<Self, AbsFilePathError> {
+        let mut splited: VecDeque<String> = abs_path.split("/").map(|x| x.to_string()).collect();
 
         let root = splited.pop_front().expect("bug");
         if root != "" && root != "~" {
             return Err(AbsFilePathError::ExpectAbsolutePath);
         }
-        
+
         if root == "~" {
             let Ok(home_dir) = std::env::var("HOME") else {
                 return Err(AbsFilePathError::FailureGetHomedir);
             };
-            let mut splited_home : VecDeque<String> = home_dir.split("/").map(|x| x.to_string()).collect();
+            let mut splited_home: VecDeque<String> =
+                home_dir.split("/").map(|x| x.to_string()).collect();
             loop {
                 let Some(dir_name) = splited_home.pop_back() else {
                     break;
@@ -91,15 +95,14 @@ impl AbsFilePath {
             }
         }
 
-
         let file_name = splited.pop_back().expect("bug");
         if is_fault_file_name(&file_name) {
-           return Err(AbsFilePathError::FaultFileName); 
+            return Err(AbsFilePathError::FaultFileName);
         }
 
-        Ok(AbsFilePath { 
+        Ok(AbsFilePath {
             dir: splited.into_iter().collect(),
-            file_name
+            file_name,
         })
     }
 
@@ -107,29 +110,31 @@ impl AbsFilePath {
         let mut jointed_dirs = self.dir.join(std::path::MAIN_SEPARATOR_STR);
         if jointed_dirs == "" {
             jointed_dirs = "/".to_string();
-        }else{
-            jointed_dirs = format!("/{}/",jointed_dirs)
+        } else {
+            jointed_dirs = format!("/{}/", jointed_dirs)
         }
-        format!("{}{}",jointed_dirs,self.file_name)
+        format!("{}{}", jointed_dirs, self.file_name)
     }
 }
 
-pub fn join_or_abs(abs: &AbsFilePath, join: &str) -> Result<AbsFilePath,AbsFilePathError> {
+pub fn join_or_abs(abs: &AbsFilePath, join: &str) -> Result<AbsFilePath, AbsFilePathError> {
     let mut tmp_chars = join.chars().peekable();
     let front = tmp_chars.peek();
-    
+
     if front != Some(&'/') && front != Some(&'~') {
         abs.join_relative(join)
-    }else{
+    } else {
         AbsFilePath::from_string(join)
     }
-
 }
 
 #[cfg(test)]
 impl AbsFilePath {
     pub fn create_decoy() -> Self {
-        AbsFilePath { dir: vec!["home".to_string()], file_name: "hello".to_string() }
+        AbsFilePath {
+            dir: vec!["home".to_string()],
+            file_name: "hello".to_string(),
+        }
     }
 }
 
@@ -141,211 +146,103 @@ mod test {
 
     #[test]
     fn join_relative() {
-        test_join_relative(
-            "/hello/two/three", 
-            "./aaa/bbb",
-            "/hello/two/aaa/bbb"
-        ); 
+        test_join_relative("/hello/two/three", "./aaa/bbb", "/hello/two/aaa/bbb");
 
-        test_join_relative(
-            "/hello/two/three", 
-            "aaa/bbb",
-            "/hello/two/aaa/bbb"
-        );
+        test_join_relative("/hello/two/three", "aaa/bbb", "/hello/two/aaa/bbb");
 
-        test_join_relative(
-            "/hello/two/three", 
-            ".aaa/bbb",
-            "/hello/two/.aaa/bbb"
-        );
+        test_join_relative("/hello/two/three", ".aaa/bbb", "/hello/two/.aaa/bbb");
 
+        test_join_relative("/hello/two/three", "../aaa/bbb", "/hello/aaa/bbb");
+        test_join_relative("/hello/two/three", "../../aaa/bbb", "/aaa/bbb");
+        test_join_relative("/hello/two/three", "../../../aaa/bbb", "/aaa/bbb");
+        test_join_relative("/hello/two/three", "./.aaa/bbb", "/hello/two/.aaa/bbb");
         test_join_relative(
-            "/hello/two/three", 
-            "../aaa/bbb",
-            "/hello/aaa/bbb"
-        );
-        test_join_relative(
-            "/hello/two/three", 
-            "../../aaa/bbb",
-            "/aaa/bbb"
-        );
-        test_join_relative(
-            "/hello/two/three", 
-            "../../../aaa/bbb",
-            "/aaa/bbb"
-        );
-        test_join_relative(
-            "/hello/two/three", 
-            "./.aaa/bbb",
-            "/hello/two/.aaa/bbb"
-        );
-        test_join_relative(
-            "/hello/two/three", 
+            "/hello/two/three",
             "./.aaa/bbb/ccc/ddd/eee/fff/ggg",
-            "/hello/two/.aaa/bbb/ccc/ddd/eee/fff/ggg"
+            "/hello/two/.aaa/bbb/ccc/ddd/eee/fff/ggg",
         );
+        test_join_relative("/hello", "./aaa", "/aaa");
         test_join_relative(
-            "/hello", 
-            "./aaa",
-            "/aaa"
-        );
-        test_join_relative(
-            "/hello/aaa/bbb/ccc", 
+            "/hello/aaa/bbb/ccc",
             "aaa/../bbb/ccc/../bb/sss",
-            "/hello/aaa/bbb/bbb/bb/sss"
+            "/hello/aaa/bbb/bbb/bb/sss",
         );
         test_join_relative(
-            "/hello/aaa/bbb/ccc", 
+            "/hello/aaa/bbb/ccc",
             "aaa/../bbb/ccc/../bb/sss",
-            "/hello/aaa/bbb/bbb/bb/sss"
+            "/hello/aaa/bbb/bbb/bb/sss",
         );
         test_join_relative(
-            "/hello/aaa/bbb/ccc", 
+            "/hello/aaa/bbb/ccc",
             "aaa/..//bbb//ccc/../bb/sss",
-            "/hello/aaa/bbb/bbb/bb/sss"
+            "/hello/aaa/bbb/bbb/bb/sss",
         );
-        test_join_relative(
-            "/hello/aaa/bbb/ccc", 
-            "aaa",
-            "/hello/aaa/bbb/aaa"
-        );
-        test_join_relative(
-            "/hello/aaa/bbb/ccc", 
-            ".aaa",
-            "/hello/aaa/bbb/.aaa"
-        );
+        test_join_relative("/hello/aaa/bbb/ccc", "aaa", "/hello/aaa/bbb/aaa");
+        test_join_relative("/hello/aaa/bbb/ccc", ".aaa", "/hello/aaa/bbb/.aaa");
     }
 
     #[test]
     fn join_relative_err() {
-        test_join_relative_err(
-            "/hello",
-            "./",
-            AbsFilePathError::FaultFileName
-        );
-        test_join_relative_err(
-            "/hello",
-            "/aaa",
-            AbsFilePathError::ExpectRelativePath
-        );
-        test_join_relative_err(
-            "/hello",
-            "aaa/",
-            AbsFilePathError::FaultFileName
-        );
-        test_join_relative_err(
-            "/hello",
-            "aaa/..",
-            AbsFilePathError::FaultFileName
-        );
-        test_join_relative_err(
-            "/hello",
-            "aaa/.",
-            AbsFilePathError::FaultFileName
-        );
-        test_join_relative_err(
-            "/hello",
-            "",
-            AbsFilePathError::ExpectRelativePath
-        );
+        test_join_relative_err("/hello", "./", AbsFilePathError::FaultFileName);
+        test_join_relative_err("/hello", "/aaa", AbsFilePathError::ExpectRelativePath);
+        test_join_relative_err("/hello", "aaa/", AbsFilePathError::FaultFileName);
+        test_join_relative_err("/hello", "aaa/..", AbsFilePathError::FaultFileName);
+        test_join_relative_err("/hello", "aaa/.", AbsFilePathError::FaultFileName);
+        test_join_relative_err("/hello", "", AbsFilePathError::ExpectRelativePath);
     }
-    
+
     #[test]
-    fn from_string(){
-        test_from_string(
-            "/home/hello",
-            "/home/hello"
-        );
+    fn from_string() {
+        test_from_string("/home/hello", "/home/hello");
         test_from_string(
             "~/home/hello",
-            &"~/home/hello".replace("~", env::var("HOME").unwrap().as_str())
+            &"~/home/hello".replace("~", env::var("HOME").unwrap().as_str()),
         );
     }
     #[test]
-    fn from_string_err(){
-        test_from_string_err(
-            "/", 
-            AbsFilePathError::FaultFileName
-        );
+    fn from_string_err() {
+        test_from_string_err("/", AbsFilePathError::FaultFileName);
 
-        test_from_string_err(
-            "/.", 
-            AbsFilePathError::FaultFileName
-        );
+        test_from_string_err("/.", AbsFilePathError::FaultFileName);
 
-        test_from_string_err(
-            "/..", 
-            AbsFilePathError::FaultFileName
-        );
+        test_from_string_err("/..", AbsFilePathError::FaultFileName);
 
-        test_from_string_err(
-            "/hello/", 
-            AbsFilePathError::FaultFileName
-        );
+        test_from_string_err("/hello/", AbsFilePathError::FaultFileName);
 
-        test_from_string_err(
-            "/hello/.", 
-            AbsFilePathError::FaultFileName
-        );
-        test_from_string_err(
-            "/hello/..", 
-            AbsFilePathError::FaultFileName
-        );
+        test_from_string_err("/hello/.", AbsFilePathError::FaultFileName);
+        test_from_string_err("/hello/..", AbsFilePathError::FaultFileName);
 
-        test_from_string_err(
-            "hello", 
-            AbsFilePathError::ExpectAbsolutePath
-        );
+        test_from_string_err("hello", AbsFilePathError::ExpectAbsolutePath);
 
-        test_from_string_err(
-            "./hello", 
-            AbsFilePathError::ExpectAbsolutePath
-        );
-        test_from_string_err(
-            "aaa/hello", 
-            AbsFilePathError::ExpectAbsolutePath
-        );
+        test_from_string_err("./hello", AbsFilePathError::ExpectAbsolutePath);
+        test_from_string_err("aaa/hello", AbsFilePathError::ExpectAbsolutePath);
     }
 
-    fn test_from_string_err(
-        from: &str,
-        err: AbsFilePathError
-    ){
+    fn test_from_string_err(from: &str, err: AbsFilePathError) {
         let a = AbsFilePath::from_string(from).unwrap_err();
-        assert_eq!(a,err);
+        assert_eq!(a, err);
     }
 
-    fn test_from_string(
-        from: &str,
-        get_: &str
-    ){
+    fn test_from_string(from: &str, get_: &str) {
         let a = AbsFilePath::from_string(from).unwrap();
-        assert_eq!(a.get(),get_);
-    } 
+        assert_eq!(a.get(), get_);
+    }
 
-    fn test_join_relative_err(
-        from: &str,
-        join: &str,
-        err: AbsFilePathError
-    ){
+    fn test_join_relative_err(from: &str, join: &str, err: AbsFilePathError) {
         println!("-------------------------------");
-        println!("from: {}\n join:{}\n",from,join);
+        println!("from: {}\n join:{}\n", from, join);
         let from_path = AbsFilePath::from_string(from).unwrap();
         println!("{:?}", from_path);
         let jointed_path = from_path.join_relative(join);
-        assert_eq!(jointed_path.unwrap_err(),err);
+        assert_eq!(jointed_path.unwrap_err(), err);
     }
 
-    fn test_join_relative(
-        from: &str,
-        join: &str,
-        jointed: &str
-    ) {
+    fn test_join_relative(from: &str, join: &str, jointed: &str) {
         println!("-------------------------------");
-        println!("from: {}\n join:{}\n jointed:{}",from,join,jointed);
+        println!("from: {}\n join:{}\n jointed:{}", from, join, jointed);
         let from_path = AbsFilePath::from_string(from).unwrap();
         println!("{:?}", from_path);
         let jointed_path = from_path.join_relative(join).unwrap();
-        assert_eq!(jointed_path.get(),jointed)
+        assert_eq!(jointed_path.get(), jointed)
     }
 }

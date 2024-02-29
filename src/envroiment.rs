@@ -39,7 +39,7 @@ impl Envroiment {
         for var in &self.map {
             vars.push(format!("\"{}\":\"{}\"", var.0, var.1.to_hex_string()));
         }
-        
+
         vars.sort();
 
         buf += &vars.join(",");
@@ -49,12 +49,11 @@ impl Envroiment {
     }
 }
 
-
 #[cfg(test)]
 impl Envroiment {
     pub fn vars_len(&self) -> usize {
         self.map.len()
-    }  
+    }
 }
 
 #[cfg(test)]
@@ -69,7 +68,7 @@ mod test {
             vec![("helo", Color::new(10, 10, 10))],
             "{\"helo\":\"#0a0a0a\"}",
         );
-        
+
         test_vars_json(
             vec![("helo", Color::new(20, 16, 255))],
             "{\"helo\":\"#1410ff\"}",
@@ -81,7 +80,7 @@ mod test {
                 ("b", Color::new(20, 16, 255)),
                 ("c", Color::new(20, 16, 255)),
             ],
-            "{\"a\":\"#1410ff\",\"b\":\"#1410ff\",\"c\":\"#1410ff\"}"
+            "{\"a\":\"#1410ff\",\"b\":\"#1410ff\",\"c\":\"#1410ff\"}",
         );
 
         // 上書き
@@ -89,22 +88,19 @@ mod test {
             vec![
                 ("a", Color::new(20, 16, 255)),
                 ("c", Color::new(20, 16, 255)),
-                ("a", Color::new(16,16,16)),
+                ("a", Color::new(16, 16, 16)),
             ],
             "{\"a\":\"#101010\",\"c\":\"#1410ff\"}",
         );
 
-        test_vars_json(
-            vec![ ],
-            "{}",
-        );
+        test_vars_json(vec![], "{}");
 
         test_vars_json(
             vec![
                 ("a", Color::new(20, 16, 255)),
                 ("b", Color::new(20, 16, 255)),
             ],
-            "{\"a\":\"#1410ff\",\"b\":\"#1410ff\"}"
+            "{\"a\":\"#1410ff\",\"b\":\"#1410ff\"}",
         );
     }
 
