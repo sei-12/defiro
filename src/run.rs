@@ -55,7 +55,7 @@ pub fn run(env: &mut Envroiment, mut code_chars: VecDeque<char>, file_path: AbsF
 #[cfg(test)]
 mod test {
 
-    use crate::{app_path, color::Color, envroiment::Envroiment, run::run};
+    use crate::{app_path, color::Color, envroiment::Envroiment, fault, parser::ParseFault, run::run};
 
     #[test]
     fn test_run() {
@@ -208,6 +208,100 @@ mod test {
         assert_eq!(env.faults[0].msg(),"ParseError: Syntax".to_string());
 
 
-        
+        test_run_(
+            "// let hello = #ffffff",
+            vec![],
+            vec![]
+        );
+
+        test_run_(
+            "\
+            hello = #ffffff; // hello
+            // hello world
+            let aaa = rgb( 10,10,10 );
+            ",
+            vec![
+                ("hello",Color::new(0xff, 0xff, 0xff)),
+                ("aaa",Color::new(10, 10,10)),
+            ],
+            vec![]
+        );
+
+        test_run_(
+            "\
+            let hello = rgb(
+                10,
+                // aaa
+                10,
+                // hello
+                10
+            )",
+            vec![
+                ("hello",Color::new(10, 10, 10))
+            ],
+            vec![]
+        );
+
+        test_run_(
+            "let hello = #ffffff // hello",
+            vec![
+                ("hello",Color::new(0xff, 0xff, 0xff))
+            ],
+            vec![]
+        );
+
+        test_run_(
+            "/ hello /",
+            vec![ ],
+            vec![ Box::new(ParseFault::Syntax)]
+        );
+
+        test_run_(
+            "/// // let hello",
+            vec![ ],
+            vec![ ]
+        );
+
+        test_run_(
+            "let hello = #ffffff/hello",
+            vec![ ],
+            vec![
+                Box::new(ParseFault::Syntax)
+            ]
+        );
+
+        test_run_(
+            "let hello = #ffffff//hello",
+            vec![ 
+                ("hello",Color::new(255, 255, 255))
+            ],
+            vec![ ]
+        );
+
+        test_run_(
+            "// // let hello",
+            vec![ ],
+            vec![ ]
+        );
+    }
+    
+    fn test_run_(
+        code: &str,
+        vars: Vec<(&str,Color)>,
+        errs: Vec<Box<dyn fault::Fault>>
+    ){
+        println!("{}",code);
+        let mut env = Envroiment::new();
+        run(&mut env, code.chars().collect(), app_path::AbsFilePath::create_decoy());
+        assert_eq!(env.vars_len(),vars.len());
+        assert_eq!(env.faults.len(),errs.len());
+
+        for err in errs.iter().zip(&env.faults) {
+            assert_eq!(err.0.msg(),err.1.msg())
+        }
+
+        for var in vars {
+            assert_eq!(env.get(&var.0.to_string()).unwrap(),var.1);
+        }
     }
 }

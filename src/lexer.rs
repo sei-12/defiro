@@ -59,7 +59,43 @@ impl fault::Fault for LexFault {
     }
 }
 
-pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault> {
+// TODO refactor
+fn remove_comment_line(chars: &mut VecDeque<char>) -> VecDeque<char>{
+    let mut ret_chars = VecDeque::new();
+    
+    let mut old_char = match chars.pop_front() {
+        Some(c) => c,
+        None => {
+            return ret_chars;
+        }        
+    };
+    
+    loop {
+        let Some(current) = chars.pop_front() else {
+            ret_chars.push_back(old_char);
+            break;
+        };
+        
+        if old_char == '/' && current == '/' {
+            peek_take_while(chars, |&ch| ch == '\n');
+            
+            match chars.pop_front() {
+                Some(c) => { old_char = c },
+                None => {
+                    break;
+                }
+            }
+        }else{
+            ret_chars.push_back(old_char);
+            old_char = current;
+        }
+    }
+    
+    ret_chars
+}
+
+pub fn lexer(chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault> {
+    let mut chars = remove_comment_line(chars);
     let mut tokens = VecDeque::new();
 
     loop {
@@ -100,6 +136,7 @@ pub fn lexer(mut chars: &mut VecDeque<char>) -> Result<VecDeque<Token>, LexFault
             tokens.push_back(Token::HexColor(color));
             continue;
         }
+        
         
         let word_vec = peek_take_while(&mut chars, |&ch| {
             is_skip_char(ch) || is_token_char(ch)
@@ -149,9 +186,78 @@ pub enum Token {
 #[cfg(test)]
 mod test {
     use crate::{color::Color, lexer::{lexer, Token}};
+    fn test_lexer(
+        line: &str,
+        assert: Vec<Token>
+    ){
+        let mut test = line.chars().collect();
+        let parsed =  Vec::from(lexer(&mut test).unwrap());
+        assert_eq!(parsed,assert);
+    }
 
     #[test]
     fn _parse_line() {
+
+        test_lexer(
+            "hello\n//hello\nfoo // hello \nlet hello",
+            vec![
+                Token::Identifier("hello".to_string()),
+                Token::Identifier("foo".to_string()),
+                Token::Let,
+                Token::Identifier("hello".to_string()),
+            ]
+        );
+
+        test_lexer(
+            "hello\n//hello\nfoo",
+            vec![
+                Token::Identifier("hello".to_string()),
+                Token::Identifier("foo".to_string()),
+            ]
+        );
+
+        test_lexer(
+            "hello/",
+            vec![
+                Token::Identifier("hello/".to_string())
+            ]
+        );
+        
+        test_lexer(
+            "hello//",
+            vec![
+                Token::Identifier("hello".to_string())
+            ]
+        );
+
+        test_lexer(
+            "// hello",
+            vec![]
+        );
+    
+        test_lexer(
+            "\
+            // hello
+            let hello
+            // hello
+            ",
+            vec![
+                Token::Let,
+                Token::Identifier("hello".to_string())
+            ]
+        );
+
+        test_lexer(
+            "\
+            include / /
+            ",
+            vec![
+                Token::Include,
+                Token::Identifier("/".to_string()),
+                Token::Identifier("/".to_string()),
+            ]
+        );
+
         let mut test = "()=,".chars().collect();
         let parsed = Vec::from(lexer(&mut test).unwrap());
         assert_eq!(

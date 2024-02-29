@@ -49,6 +49,14 @@ impl Envroiment {
     }
 }
 
+
+#[cfg(test)]
+impl Envroiment {
+    pub fn vars_len(&self) -> usize {
+        self.map.len()
+    }  
+}
+
 #[cfg(test)]
 mod test {
     use crate::color::Color;
