@@ -1,2 +1,0 @@
-hello = rgb(10,10,10);
-include ./3.test;
