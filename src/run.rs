@@ -170,7 +170,7 @@ mod test {
         );
         assert_eq!(
             env.faults[0].msg(),
-            "RuntimeError: hello is Not Found".to_string()
+            "EvalError: hello is Not Found".to_string()
         );
 
         let code = "\

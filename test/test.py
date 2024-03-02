@@ -10,8 +10,8 @@ cmd = os.path.dirname(__file__) + "/../target/release/defiro"
 
 test_dirs = subprocess.run(f"find {os.path.dirname(__file__)} -type d -name case*",shell=True,stdout=subprocess.PIPE).stdout.decode().split("\n")
 
-test_dirs = filter(lambda x: x != "",test_dirs)
-
+test_dirs = list(filter(lambda x: x != "",test_dirs))
+test_dirs.sort()
 
 all_ok = True
 for test_dir in test_dirs:

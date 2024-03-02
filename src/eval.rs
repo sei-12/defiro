@@ -12,7 +12,7 @@ use crate::{
     run::run,
 };
 
-pub enum RuntimeFault {
+pub enum EvalFault {
     NotFound { target_name: String },
     NoSuchFile { path: String },
     TodoRename2 { err: AbsFilePathError },
@@ -24,24 +24,24 @@ enum Value {
     Int(ColorInt),
 }
 
-impl From<AbsFilePathError> for RuntimeFault {
+impl From<AbsFilePathError> for EvalFault {
     fn from(value: AbsFilePathError) -> Self {
-        RuntimeFault::TodoRename2 { err: value }
+        EvalFault::TodoRename2 { err: value }
     }
 }
 
-impl fault::Fault for RuntimeFault {
+impl fault::Fault for EvalFault {
     fn msg(&self) -> String {
         match self {
-            RuntimeFault::NotFound { target_name } => {
-                format!("RuntimeError: {} is Not Found", target_name)
+            EvalFault::NotFound { target_name } => {
+                format!("EvalError: {} is Not Found", target_name)
             }
-            RuntimeFault::NoSuchFile { path } => {
-                format!("RuntimeError: No such file. path:{}", path)
+            EvalFault::NoSuchFile { path } => {
+                format!("EvalError: No such file. path:{}", path)
             }
-            RuntimeFault::TodoRename2 { err } => format!("RuntimeError: {:?}", err),
-            RuntimeFault::IsNotFunction { target_name } => {
-                format!("RuntimeError: {} is not function", target_name)
+            EvalFault::TodoRename2 { err } => format!("EvalError: {:?}", err),
+            EvalFault::IsNotFunction { target_name } => {
+                format!("EvalError: {} is not function", target_name)
             }
         }
     }
@@ -50,13 +50,13 @@ impl fault::Fault for RuntimeFault {
 pub fn eval_include_stmt(
     include_stmt: IncludeStatement,
     env: &mut Envroiment,
-) -> Result<(), RuntimeFault> {
+) -> Result<(), EvalFault> {
     let current_file_path = env.include_file_stack.get_current_file();
     let file_path = app_path::join_or_abs(current_file_path, &include_stmt.path)?;
     let file_string = match read_to_string(file_path.get()) {
         Ok(str) => str,
         Err(_) => {
-            return Err(RuntimeFault::NoSuchFile {
+            return Err(EvalFault::NoSuchFile {
                 path: include_stmt.path,
             });
         }
@@ -67,14 +67,14 @@ pub fn eval_include_stmt(
     Ok(())
 }
 
-pub fn eval(stmt: Statement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
+pub fn eval(stmt: Statement, env: &mut Envroiment) -> Result<(), EvalFault> {
     match stmt {
         Statement::Let(let_stmt) => eval_let_statement(let_stmt, env),
         Statement::Include(include_stmt) => eval_include_stmt(include_stmt, env),
     }
 }
 
-fn eval_let_statement(let_stmt: LetStatement, env: &mut Envroiment) -> Result<(), RuntimeFault> {
+fn eval_let_statement(let_stmt: LetStatement, env: &mut Envroiment) -> Result<(), EvalFault> {
     let value = eval_expression(let_stmt.right, env)?;
     let Value::Color(color) = value else { todo!() };
 
@@ -82,14 +82,14 @@ fn eval_let_statement(let_stmt: LetStatement, env: &mut Envroiment) -> Result<()
     Ok(())
 }
 
-fn eval_identifer(name: String, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
+fn eval_identifer(name: String, env: &mut Envroiment) -> Result<Value, EvalFault> {
     match env.get(&name) {
         Some(color) => Ok(Value::Color(color)),
-        None => Err(RuntimeFault::NotFound { target_name: name }),
+        None => Err(EvalFault::NotFound { target_name: name }),
     }
 }
 
-fn eval_call(call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
+fn eval_call(call: Call, env: &mut Envroiment) -> Result<Value, EvalFault> {
     if call.name == "plus" {
         eval_plus_function(call, env)
     } else if call.name == "minus" {
@@ -97,13 +97,13 @@ fn eval_call(call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
     } else if call.name == "rgb" {
         eval_rgb_function(call)
     } else {
-        Err(RuntimeFault::IsNotFunction {
+        Err(EvalFault::IsNotFunction {
             target_name: call.name,
         })
     }
 }
 
-fn eval_expression(exp: Expression, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
+fn eval_expression(exp: Expression, env: &mut Envroiment) -> Result<Value, EvalFault> {
     let value = match exp {
         Expression::Color(color) => Value::Color(color),
         Expression::Identifier(name) => eval_identifer(name, env)?,
@@ -114,7 +114,7 @@ fn eval_expression(exp: Expression, env: &mut Envroiment) -> Result<Value, Runti
     Ok(value)
 }
 
-fn eval_plus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
+fn eval_plus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, EvalFault> {
     if call.args.len() != 4 {
         // runtime error
         todo!()
@@ -139,7 +139,7 @@ fn eval_plus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, Run
     Ok(Value::Color(color.plus(r, g, b)))
 }
 
-fn eval_rgb_function(call: Call) -> Result<Value, RuntimeFault> {
+fn eval_rgb_function(call: Call) -> Result<Value, EvalFault> {
     if call.args.len() != 3 {
         // runtime error
         todo!()
@@ -157,7 +157,7 @@ fn eval_rgb_function(call: Call) -> Result<Value, RuntimeFault> {
     Ok(Value::Color(Color::new(r, g, b)))
 }
 
-fn eval_minus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, RuntimeFault> {
+fn eval_minus_function(mut call: Call, env: &mut Envroiment) -> Result<Value, EvalFault> {
     if call.args.len() != 4 {
         // runtime error
         todo!()
