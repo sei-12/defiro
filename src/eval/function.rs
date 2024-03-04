@@ -1,11 +1,16 @@
-use crate::{color::Color, envroiment::Envroiment, parser:: Expression};
+use crate::{color::Color, envroiment::Envroiment, parser::Expression};
 
 use super::{eval_expression, EvalFault, Value};
 
-
-pub (super) fn eval_plus_function(mut args: Vec<Expression>, env: &mut Envroiment) -> Result<Value, EvalFault> {
+pub(super) fn eval_plus_function(
+    mut args: Vec<Expression>,
+    env: &mut Envroiment,
+) -> Result<Value, EvalFault> {
     if args.len() != 4 {
-        return Err(EvalFault::NumArgments { req: 4, got: args.len() })
+        return Err(EvalFault::NumArgments {
+            req: 4,
+            got: args.len(),
+        });
     };
 
     let Expression::Int(b) = args.pop().expect("bug") else {
@@ -29,9 +34,12 @@ pub (super) fn eval_plus_function(mut args: Vec<Expression>, env: &mut Envroimen
     Ok(Value::Color(color.plus(r, g, b)))
 }
 
-pub (super) fn eval_rgb_function(args: Vec<Expression>) -> Result<Value, EvalFault> {
+pub(super) fn eval_rgb_function(args: Vec<Expression>) -> Result<Value, EvalFault> {
     if args.len() != 3 {
-        return Err(EvalFault::NumArgments { req: 3, got: args.len() })
+        return Err(EvalFault::NumArgments {
+            req: 3,
+            got: args.len(),
+        });
     };
     let Expression::Int(r) = args[0] else {
         return Err(EvalFault::ArgType);
@@ -46,9 +54,15 @@ pub (super) fn eval_rgb_function(args: Vec<Expression>) -> Result<Value, EvalFau
     Ok(Value::Color(Color::new(r, g, b)))
 }
 
-pub (super) fn eval_minus_function(mut args: Vec<Expression>,env: &mut Envroiment) -> Result<Value, EvalFault> {
+pub(super) fn eval_minus_function(
+    mut args: Vec<Expression>,
+    env: &mut Envroiment,
+) -> Result<Value, EvalFault> {
     if args.len() != 4 {
-        return Err(EvalFault::NumArgments { req: 4, got: args.len() })
+        return Err(EvalFault::NumArgments {
+            req: 4,
+            got: args.len(),
+        });
     };
 
     let Expression::Int(b) = args.pop().expect("bug") else {
@@ -76,22 +90,26 @@ pub (super) fn eval_minus_function(mut args: Vec<Expression>,env: &mut Envroimen
 mod test {
     use std::vec;
 
-    use crate::{color::Color, envroiment::Envroiment, eval::function::{eval_minus_function, eval_plus_function}, parser::Expression};
+    use crate::{
+        color::Color,
+        envroiment::Envroiment,
+        eval::function::{eval_minus_function, eval_plus_function},
+        parser::Expression,
+    };
 
     use super::{EvalFault, Value};
 
-
     #[test]
-    fn test_eval_minus_func(){
+    fn test_eval_minus_func() {
         assert_eval_minus_func_ok(
             vec![
                 Expression::Color(Color::new(110, 110, 110)),
                 Expression::Int(10),
                 Expression::Int(10),
                 Expression::Int(10),
-            ], 
-            vec![], 
-            Value::Color(Color::new(100, 100,100))
+            ],
+            vec![],
+            Value::Color(Color::new(100, 100, 100)),
         );
         assert_eval_minus_func_ok(
             vec![
@@ -99,9 +117,9 @@ mod test {
                 Expression::Int(1),
                 Expression::Int(111),
                 Expression::Int(255),
-            ], 
-            vec![], 
-            Value::Color(Color::new(0, 0,0))
+            ],
+            vec![],
+            Value::Color(Color::new(0, 0, 0)),
         );
         assert_eval_minus_func_ok(
             vec![
@@ -110,15 +128,13 @@ mod test {
                 Expression::Int(10),
                 Expression::Int(0),
             ],
-            vec![
-                ("hello",Color::new(100, 200, 100))
-            ],
-            Value::Color(Color::new(0,190,100))
+            vec![("hello", Color::new(100, 200, 100))],
+            Value::Color(Color::new(0, 190, 100)),
         );
     }
 
     #[test]
-    fn test_eval_plus_func(){
+    fn test_eval_plus_func() {
         assert_eval_plus_func_ok(
             vec![
                 Expression::Color(Color::new(10, 10, 10)),
@@ -127,7 +143,7 @@ mod test {
                 Expression::Int(10),
             ],
             vec![],
-            Value::Color(Color::new(20, 20, 20))
+            Value::Color(Color::new(20, 20, 20)),
         );
 
         assert_eval_plus_func_ok(
@@ -137,10 +153,8 @@ mod test {
                 Expression::Int(10),
                 Expression::Int(0),
             ],
-            vec![
-                ("hello",Color::new(100, 200, 255))
-            ],
-            Value::Color(Color::new(200,210,255))
+            vec![("hello", Color::new(100, 200, 255))],
+            Value::Color(Color::new(200, 210, 255)),
         );
 
         assert_eval_plus_func_ok(
@@ -151,17 +165,13 @@ mod test {
                 Expression::Int(0),
             ],
             vec![],
-            Value::Color(Color::new(255, 110, 10))
+            Value::Color(Color::new(255, 110, 10)),
         );
     }
-    
+
     #[test]
-    fn test_eval_plus_func_err(){
-        assert_eval_plus_func_err(
-            vec![], 
-            vec![], 
-            EvalFault::NumArgments { req: 4, got: 0 }
-        );
+    fn test_eval_plus_func_err() {
+        assert_eval_plus_func_err(vec![], vec![], EvalFault::NumArgments { req: 4, got: 0 });
 
         assert_eval_plus_func_err(
             vec![
@@ -170,17 +180,15 @@ mod test {
                 Expression::Int(1),
                 Expression::Int(1),
                 Expression::Int(1),
-            ], 
-            vec![], 
-            EvalFault::NumArgments { req: 4, got: 5 }
+            ],
+            vec![],
+            EvalFault::NumArgments { req: 4, got: 5 },
         );
 
         assert_eval_plus_func_err(
-            vec![
-                Expression::Int(1)
-            ], 
-            vec![], 
-            EvalFault::NumArgments { req: 4, got: 1 }
+            vec![Expression::Int(1)],
+            vec![],
+            EvalFault::NumArgments { req: 4, got: 1 },
         );
 
         assert_eval_plus_func_err(
@@ -191,7 +199,7 @@ mod test {
                 Expression::Int(0),
             ],
             vec![],
-            EvalFault::ArgType 
+            EvalFault::ArgType,
         );
 
         assert_eval_plus_func_err(
@@ -202,18 +210,13 @@ mod test {
                 Expression::Int(0),
             ],
             vec![],
-            EvalFault::ArgType 
+            EvalFault::ArgType,
         );
-
     }
-    
+
     #[test]
-    fn test_eval_minus_func_err(){
-        assert_eval_minus_func_err(
-            vec![], 
-            vec![], 
-            EvalFault::NumArgments { req: 4, got: 0 }
-        );
+    fn test_eval_minus_func_err() {
+        assert_eval_minus_func_err(vec![], vec![], EvalFault::NumArgments { req: 4, got: 0 });
 
         assert_eval_minus_func_err(
             vec![
@@ -222,17 +225,15 @@ mod test {
                 Expression::Int(1),
                 Expression::Int(1),
                 Expression::Int(1),
-            ], 
-            vec![], 
-            EvalFault::NumArgments { req: 4, got: 5 }
+            ],
+            vec![],
+            EvalFault::NumArgments { req: 4, got: 5 },
         );
 
         assert_eval_minus_func_err(
-            vec![
-                Expression::Int(1)
-            ], 
-            vec![], 
-            EvalFault::NumArgments { req: 4, got: 1 }
+            vec![Expression::Int(1)],
+            vec![],
+            EvalFault::NumArgments { req: 4, got: 1 },
         );
 
         assert_eval_minus_func_err(
@@ -243,7 +244,7 @@ mod test {
                 Expression::Int(0),
             ],
             vec![],
-            EvalFault::ArgType 
+            EvalFault::ArgType,
         );
 
         assert_eval_minus_func_err(
@@ -254,67 +255,65 @@ mod test {
                 Expression::Int(0),
             ],
             vec![],
-            EvalFault::ArgType 
+            EvalFault::ArgType,
         );
-
     }
     fn assert_eval_minus_func_err(
         args: Vec<Expression>,
-        env_vars: Vec<(&str,Color)>,
-        assert_val: EvalFault
-    ){
+        env_vars: Vec<(&str, Color)>,
+        assert_val: EvalFault,
+    ) {
         let mut env = Envroiment::new();
         for var in env_vars {
-            env.set(var.0.to_string(), var.1)            
+            env.set(var.0.to_string(), var.1)
         }
 
         let result = eval_minus_function(args, &mut env).unwrap_err();
-        
-        assert_eq!(result,assert_val);
+
+        assert_eq!(result, assert_val);
     }
 
     fn assert_eval_minus_func_ok(
         args: Vec<Expression>,
-        env_vars: Vec<(&str,Color)>,
-        assert_val: Value
-    ){
+        env_vars: Vec<(&str, Color)>,
+        assert_val: Value,
+    ) {
         let mut env = Envroiment::new();
         for var in env_vars {
-            env.set(var.0.to_string(), var.1)            
+            env.set(var.0.to_string(), var.1)
         }
 
         let result = eval_minus_function(args, &mut env).unwrap();
-        
-        assert_eq!(result,assert_val);
+
+        assert_eq!(result, assert_val);
     }
     fn assert_eval_plus_func_err(
         args: Vec<Expression>,
-        env_vars: Vec<(&str,Color)>,
-        assert_val: EvalFault
-    ){
+        env_vars: Vec<(&str, Color)>,
+        assert_val: EvalFault,
+    ) {
         let mut env = Envroiment::new();
         for var in env_vars {
-            env.set(var.0.to_string(), var.1)            
+            env.set(var.0.to_string(), var.1)
         }
 
         let result = eval_plus_function(args, &mut env).unwrap_err();
-        
-        assert_eq!(result,assert_val);
+
+        assert_eq!(result, assert_val);
     }
 
     fn assert_eval_plus_func_ok(
         args: Vec<Expression>,
-        env_vars: Vec<(&str,Color)>,
-        assert_val: Value
-    ){
+        env_vars: Vec<(&str, Color)>,
+        assert_val: Value,
+    ) {
         let mut env = Envroiment::new();
         for var in env_vars {
-            env.set(var.0.to_string(), var.1)            
+            env.set(var.0.to_string(), var.1)
         }
 
-        
         let result = eval_plus_function(args, &mut env).unwrap();
-        
-        assert_eq!(result,assert_val);
+
+        assert_eq!(result, assert_val);
     }
 }

@@ -17,17 +17,17 @@ use crate::{
 
 use self::function::{eval_minus_function, eval_plus_function, eval_rgb_function};
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum EvalFault {
     NotFound { target_name: String },
     NoSuchFile { path: String },
     TodoRename2 { err: AbsFilePathError },
     IsNotFunction { target_name: String },
     NumArgments { req: usize, got: usize },
-    ArgType // { req: String, got: String },
+    ArgType, // { req: String, got: String },
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Value {
     Color(Color),
     Int(ColorInt),
@@ -51,10 +51,13 @@ impl fault::Fault for EvalFault {
             EvalFault::TodoRename2 { err } => format!("EvalError: {:?}", err),
             EvalFault::IsNotFunction { target_name } => {
                 format!("EvalError: {} is not function", target_name)
-            },
+            }
             EvalFault::NumArgments { req, got } => {
-                format!("EvalError: Wrong number of arguments. req={} got={}",req,got)
-            },
+                format!(
+                    "EvalError: Wrong number of arguments. req={} got={}",
+                    req, got
+                )
+            }
             // EvalFault::ArgType { req, got } => {
             //     format!("EvalError: The type of the argument is differentent. req={} got={}",req,got)
             // }
@@ -109,7 +112,6 @@ fn eval_identifer(name: String, env: &mut Envroiment) -> Result<Value, EvalFault
 
 fn eval_call(call: Call, env: &mut Envroiment) -> Result<Value, EvalFault> {
     if call.name == "plus" {
-
         eval_plus_function(call.args, env)
     } else if call.name == "minus" {
         eval_minus_function(call.args, env)
@@ -132,4 +134,3 @@ fn eval_expression(exp: Expression, env: &mut Envroiment) -> Result<Value, EvalF
 
     Ok(value)
 }
-
