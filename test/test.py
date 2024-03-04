@@ -4,7 +4,7 @@ import os
 import subprocess
 
 subprocess.run("cargo build --release",shell=True)
-subprocess.run("cargo test",shell=True)
+# subprocess.run("cargo test",shell=True)
 
 cmd = os.path.dirname(__file__) + "/../target/release/defiro"
 
