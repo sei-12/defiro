@@ -1,0 +1,5 @@
+hello ;
+
+aaa = rgb(10,111);
+
+color = rgb(10,#ffaabb,10);

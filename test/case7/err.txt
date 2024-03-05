@@ -1,0 +1,3 @@
+ParseError: Syntax
+EvalError: Wrong number of arguments. req=3 got=2
+EvalError: The type of the argument is differentent.
